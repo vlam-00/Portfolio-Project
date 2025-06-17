@@ -1,10 +1,13 @@
 /* user=vlam reportName=Portfolio Project - SQL Data Exploration reportSummary: Multiple queries written to display the different techniques used for SQL data exploration for my portfolio project */ 
+----------------------------------------------------------------------------------------------------
+--	Select and view everything from the COVID Deaths table
 SELECT *
 FROM [Portfolio Project].dbo.Covid_Deaths
 ORDER BY 3, 4
 
 
 ----------------------------------------------------------------------------------------------------
+--	Select and view everything from the COVID Vaccinations table
 /*
 SELECT *
 FROM [Portfolio Project]..Covid_Vaccinations
@@ -13,7 +16,7 @@ ORDER BY 3, 4
 
 
 ----------------------------------------------------------------------------------------------------
---	Select data that we are going to be using
+--	Select specific columns that we want to view from the table
 SELECT 
 	location,
 	date,
@@ -195,7 +198,7 @@ ORDER BY 2, 3
 
 
 ----------------------------------------------------------------------------------------------------
---	Data for Data Visualizations
+--	Data to create a view for Data Visualizations
 CREATE VIEW Population_Vaccinated_Percentage as
 SELECT cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations,
 	SUM( CONVERT( int, cv.new_vaccinations) ) OVER ( PARTITION BY cd.location ORDER BY cd.location, cd.date  ) as Total_Vaccination_Count
