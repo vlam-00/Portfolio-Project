@@ -1,43 +1,64 @@
+/* user=vlam reportName=Portfolio Project - SQL Data Exploration reportSummary: Multiple queries written to display the different techniques used for SQL data exploration for my portfolio project */ 
 SELECT *
 FROM [Portfolio Project].dbo.Covid_Deaths
 ORDER BY 3, 4
 
 
---SELECT *
---FROM [Portfolio Project]..Covid_Vaccinations
---ORDER BY 3, 4
+----------------------------------------------------------------------------------------------------
+/*
+SELECT *
+FROM [Portfolio Project]..Covid_Vaccinations
+ORDER BY 3, 4
+*/
 
 
-/*	Select data that we are going to be using	*/
-SELECT location, date, total_cases,	new_cases, total_deaths, population
-FROM [Portfolio Project]..Covid_Deaths
-ORDER BY 1, 2
+----------------------------------------------------------------------------------------------------
+--	Select data that we are going to be using
+SELECT 
+	location,
+	date,
+	total_cases,
+	new_cases,
+	total_deaths,
+	population
+FROM 
+	[Portfolio Project]..Covid_Deaths
+ORDER BY 
+	1, 2
 
 
-/*	Total Cases vs Total Deaths	
-	Shows the likelihood of dying if you contract COVID-19 in your country	*/
-SELECT location, date, total_cases, total_deaths, (total_deaths/total_cases) * 100 as Death_Percentage
-FROM [Portfolio Project]..Covid_Deaths
-WHERE location LIKE '%states%'
-ORDER BY 1, 2
+----------------------------------------------------------------------------------------------------
+--	Total Cases vs Total Deaths	
+--	Shows the likelihood of dying if you contract COVID-19 in your country
+SELECT 
+	location, date, total_cases, total_deaths, (total_deaths/total_cases) * 100 as Death_Percentage
+FROM 
+	[Portfolio Project]..Covid_Deaths
+WHERE 
+	location LIKE '%states%'
+ORDER BY 
+	1, 2
 
 
-/*	Total Cases vs Population
-	Shows the percentage of population contracted COVID-19	*/
+----------------------------------------------------------------------------------------------------
+--	Total Cases vs Population
+--	Shows the percentage of population contracted COVID-19
 SELECT location, date, population, total_cases, (total_cases/population) * 100 as Population_Infected_Percentage
 FROM [Portfolio Project]..Covid_Deaths
 WHERE location LIKE '%states%'
 ORDER BY 1, 2
 
 
-/*	Countries with highest infection rate compared to population	*/
+----------------------------------------------------------------------------------------------------
+--	Countries with highest infection rate compared to population
 SELECT location, population, MAX(total_cases) as Highest_Infection_Count , MAX( (total_cases/population) ) * 100 as Population_Infected_Percentage
 FROM [Portfolio Project]..Covid_Deaths
 GROUP BY location, population
 ORDER BY Population_Infected_Percentage DESC
 
 
-/*	Countries with highest death rate per population	*/
+----------------------------------------------------------------------------------------------------
+-- Countries with highest death rate per population
 SELECT location,  MAX( CAST( total_deaths AS int ) ) as Total_Death_Count
 FROM [Portfolio Project]..Covid_Deaths
 WHERE continent IS NOT NULL
@@ -45,7 +66,8 @@ GROUP BY location
 ORDER BY Total_Death_Count DESC
 
 
-/*	Continents with highest death rate per population	*/
+----------------------------------------------------------------------------------------------------
+--	Continents with highest death rate per population
 SELECT continent,  MAX( CAST( total_deaths AS int ) ) as Total_Death_Count
 FROM [Portfolio Project]..Covid_Deaths
 WHERE continent IS NOT NULL
@@ -53,9 +75,11 @@ GROUP BY continent
 ORDER BY Total_Death_Count DESC
 
 
-/*	Global Numbers by Date	*/
+----------------------------------------------------------------------------------------------------
+-- Global Numbers by Date
 SELECT date, 
-	SUM( new_cases ) as Total_Case_Count, SUM( CAST( new_deaths AS int ) ) as Total_Death_Count,
+	SUM( new_cases ) as Total_Case_Count,
+	SUM( CAST( new_deaths AS int ) ) as Total_Death_Count,
 	(
 	SUM(
 		CASE
@@ -77,12 +101,14 @@ GROUP BY date
 ORDER BY 1, 2
 
 
-/*	Global Numbers by Date
-	Same query as above but using SET methods to control query behavior to avoid errors	*/
+----------------------------------------------------------------------------------------------------
+--	Global Numbers by Date
+--	Same query as above but using SET methods to control query behavior to avoid errors
 SET ARITHABORT OFF
 SET ANSI_WARNINGS OFF
 SELECT date, 
-	SUM( new_cases ) as Total_Case_Count, SUM( CAST( new_deaths AS int ) ) as Total_Death_Count,
+	SUM( new_cases ) as Total_Case_Count,
+	SUM( CAST( new_deaths AS int ) ) as Total_Death_Count,
 	SUM( CAST( new_deaths AS int ) ) / SUM( new_cases ) * 100 as Death_Percentage
 FROM [Portfolio Project]..Covid_Deaths
 WHERE continent IS NOT NULL
@@ -90,18 +116,19 @@ GROUP BY date
 ORDER BY 1, 2
 
 
-/*	Total Global Numbers	*/
+----------------------------------------------------------------------------------------------------
+--	Total Global Numbers
 SELECT 
-	SUM( new_cases ) as Total_Case_Count, SUM( CAST( new_deaths AS int ) ) as Total_Death_Count,
+	SUM( new_cases ) as Total_Case_Count,
+	SUM( CAST( new_deaths AS int ) ) as Total_Death_Count,
 	SUM( CAST( new_deaths AS int ) ) / SUM( new_cases ) * 100 as Death_Percentage
 FROM [Portfolio Project]..Covid_Deaths
 WHERE continent IS NOT NULL
 ORDER BY 1, 2
 
 
-
-
-/*	Joining tables together	*/
+----------------------------------------------------------------------------------------------------
+--	Joining tables together
 SELECT *
 FROM [Portfolio Project].dbo.Covid_Deaths  cd
 JOIN [Portfolio Project].dbo.Covid_Vaccinations  cv
@@ -109,8 +136,8 @@ JOIN [Portfolio Project].dbo.Covid_Vaccinations  cv
 	AND cd.date = cv.date
 
 
-
-/*	Total population vs vaccinations	*/
+----------------------------------------------------------------------------------------------------
+--	Total population vs vaccinations
 SELECT cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations,
 	SUM( CONVERT( int, cv.new_vaccinations) ) OVER ( PARTITION BY cd.location ORDER BY cd.location, cd.date  ) as Total_Vaccination_Count,
 	(SUM( CONVERT( int, cv.new_vaccinations) ) OVER ( PARTITION BY cd.location ORDER BY cd.location, cd.date  )/population) * 100 as Vaccination_Percentage
@@ -122,9 +149,9 @@ WHERE cd.continent IS NOT NULL
 ORDER BY 2, 3
 
 
-
-/*	Total population vs vaccinations
-	Same query as above using CTE (Common Table Expression) method	*/
+----------------------------------------------------------------------------------------------------
+--	Total population vs vaccinations
+--	Same query as above using CTE (Common Table Expression) method
 WITH POPvsVAC (continent, location, date, population,  new_vaccinations, Total_Vaccination_Count)
 AS
 (
@@ -138,11 +165,12 @@ WHERE cd.continent IS NOT NULL
 )
 SELECT *, (Total_Vaccination_Count/population) * 100 as Vaccination_Percentage
 FROM POPvsVAC
+ORDER BY 2, 3
 
 
-
-/* Total population vs vaccinations
-	Same query as above but using a TEMP TABLE method to insert into query	*/
+----------------------------------------------------------------------------------------------------
+--	Total population vs vaccinations
+--	Same query as above but using a TEMP TABLE method to insert into query
 DROP TABLE IF EXISTS #Population_Vaccinated_Percentage
 CREATE TABLE #Population_Vaccinated_Percentage
 (
@@ -163,10 +191,11 @@ JOIN [Portfolio Project].dbo.Covid_Vaccinations  cv
 WHERE cd.continent IS NOT NULL
 SELECT *, (Total_Vaccination_Count/population) * 100 as Vaccination_Percentage
 FROM #Population_Vaccinated_Percentage
+ORDER BY 2, 3
 
 
-
-/*	Data for Data Visualizations	*/
+----------------------------------------------------------------------------------------------------
+--	Data for Data Visualizations
 CREATE VIEW Population_Vaccinated_Percentage as
 SELECT cd.continent, cd.location, cd.date, cd.population, cv.new_vaccinations,
 	SUM( CONVERT( int, cv.new_vaccinations) ) OVER ( PARTITION BY cd.location ORDER BY cd.location, cd.date  ) as Total_Vaccination_Count
