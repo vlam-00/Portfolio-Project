@@ -1,0 +1,149 @@
+'****************************************************************************************************
+' Updates all tables on the capacity_breakdown sheet
+'****************************************************************************************************
+Sub Update_Capacity()
+
+'***** SUMMARY OF OLD VERSION OF THIS CODE *****
+' No longer needed - Last used on report 20220403
+'****************************************************************************************************
+' Declaring range variable for capacity_breakdown sheet update
+'
+'    Dim rngDC As Range
+'    Set rngDC = Sheets("capacity_breakdown").Range("F33:CZ33")
+'    Dim rngDCStart As Range
+'    Set rngDCStart = Sheets("capacity_breakdown").Range("F34")
+'
+'***** Update Tables *****
+'***********************************************
+'With Sheets("capacity_breakdown")
+'    rngDC.Copy
+'    End With
+'With Sheets("capacity_breakdown")
+'    rngDCStart.Select
+'    End With
+'    Range(Selection, Selection.End(xlDown)).Select
+'
+'    Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+'        SkipBlanks:=False, Transpose:=False
+'    Application.CutCopyMode = False
+'
+'    Worksheets("capacity_breakdown").Calculate
+'
+'    Selection.Copy
+'    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+'        :=False, Transpose:=False
+'
+'****************************************************************************************************
+
+' Declaring range variable for capacity_breakdown sheet update
+'****************************************************************************************************
+    Dim rngDC As Range
+    Dim rngSR As Range
+    Dim rngPOD As Range
+    Dim rngSRPOD As Range
+    
+    Windows("Capacity Summary Report - MASTER.xlsm").Activate
+    Sheets("capacity_breakdown").Select
+   
+
+'***** DC table section update *****
+'***********************************
+
+'***** Finds the label for the table *****
+    Set rngDC = Cells.Find(What:="Data Center", After:=ActiveCell, LookIn:=xlValues, _
+        LookAt:=xlWhole, SearchOrder:=xlByColumns, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False)
+        
+'***** Copies formulas in the first row of this section then moves down one cell *****
+    rngDC.Offset(1, 4).Resize(rngDC.Rows.Count, rngDC.Columns.Count + 125).Copy
+    rngDC.Offset(2, 4).Select
+    Range(Selection, Selection.End(xlDown)).Select
+
+'***** Paste and calculates formulas, then copy and pastes selection as values *****
+    Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+    SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+
+    Worksheets("capacity_breakdown").Calculate
+    
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+
+
+'***** Server Room table section update *****
+'********************************************
+
+'***** Finds the label for the table *****
+    Set rngSR = Cells.Find(What:="Server Room", After:=ActiveCell, LookIn:=xlValues, _
+        LookAt:=xlWhole, SearchOrder:=xlByColumns, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False)
+        
+'***** Copies formulas in the first row of this section then moves down one cell *****
+    rngSR.Offset(1, 4).Resize(rngSR.Rows.Count, rngSR.Columns.Count + 125).Copy
+    rngSR.Offset(2, 4).Select
+    Range(Selection, Selection.End(xlDown)).Select
+
+'***** Paste and calculates formulas, then copy and pastes selection as values *****
+    Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+    SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+
+    Worksheets("capacity_breakdown").Calculate
+    
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+
+
+'***** POD table section update *****
+'************************************
+
+'***** Finds the label for the table *****
+    Set rngPOD = Cells.Find(What:="POD", After:=ActiveCell, LookIn:=xlValues, _
+        LookAt:=xlWhole, SearchOrder:=xlByColumns, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False)
+        
+'***** Copies formulas in the first row of this section then moves down one cell *****
+    rngPOD.Offset(1, 4).Resize(rngPOD.Rows.Count, rngPOD.Columns.Count + 125).Copy
+    rngPOD.Offset(2, 4).Select
+    Range(Selection, Selection.End(xlDown)).Select
+
+'***** Paste and calculates formulas, then copy and pastes selection as values *****
+    Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+    SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+
+    Worksheets("capacity_breakdown").Calculate
+    
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+
+'***** Server Room And POD table section update *****
+'****************************************************
+
+'***** Finds the label for the table *****
+    Set rngSRPOD = Cells.Find(What:="Server Room And POD", After:=ActiveCell, LookIn:=xlValues, _
+        LookAt:=xlWhole, SearchOrder:=xlByColumns, SearchDirection:=xlNext, _
+        MatchCase:=False, SearchFormat:=False)
+        
+'***** Copies formulas in the first row of this section then moves down one cell *****
+    rngSRPOD.Offset(1, 4).Resize(rngSRPOD.Rows.Count, rngSRPOD.Columns.Count + 125).Copy
+    rngSRPOD.Offset(2, 4).Select
+    Range(Selection, Selection.End(xlDown)).Select
+
+'***** Paste and calculates formulas, then copy and pastes selection as values *****
+    Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+    SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+
+    Worksheets("capacity_breakdown").Calculate
+    
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+        
+    Application.Calculation = xlCalculationAutomatic
+        
+End Sub
