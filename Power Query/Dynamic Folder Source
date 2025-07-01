@@ -1,0 +1,13 @@
+let
+    Source = Excel.CurrentWorkbook(){[Name="File_Path"]}[Content],
+    Path = Source{4}[File Path],
+    FolderSource = Folder.Contents(Path),
+    #"Remove Temp Files" = Table.SelectRows(FolderSource, each not Text.StartsWith([Name], "~$")),
+    #"Filtered Rows" = Table.SelectRows(#"Remove Temp Files", each Text.Contains([Name], "Capacity")),
+    #"Filtered Rows1" = Table.SelectRows(#"Filtered Rows", each ([Extension] <> ".csv")),
+    #"Filtered to Latest File" = Table.SelectRows(#"Filtered Rows1", let latest = List.Max(#"Filtered Rows1"[Date modified]) in each [Date modified] = latest),
+    Navigation = #"Filtered to Latest File"{0}[Content],
+    #"Imported Excel Workbook" = Excel.Workbook(Navigation),
+    rack_breakdown_Sheet = #"Imported Excel Workbook"{[Item="rack_breakdown",Kind="Sheet"]}[Data]
+in
+    rack_breakdown_Sheet
