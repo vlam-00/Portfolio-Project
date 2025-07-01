@@ -1,0 +1,260 @@
+'****************************************************************************************************
+' Updates data and saves as
+'****************************************************************************************************
+Sub full_update()
+
+    ThisWorkbook.RefreshAll
+    Call Module2.cap_update
+    Call Module2.import_update
+    Call Module3.update_DCIM
+    
+    MsgBox "Do not forget to import this file to Decision Focus.", vbCritical   '// Moved from Module2.import_update
+
+'// No longer needed, will start manually importing directly into DF
+'    Call Module1.auto_email
+
+
+End Sub
+
+
+
+
+'****************************************************************************************************
+' Automatically sends the report to the DF team via outlook
+'****************************************************************************************************
+Sub auto_email()
+
+    Dim OutlookApp  As Object
+    Dim OutlookMail As Object
+    Set OutlookApp = CreateObject("Outlook.Application")
+    Set OutlookMail = OutlookApp.CreateItem(0)
+    Dim sDate       As String
+    Dim signature   As String
+
+    sDate = ThisWorkbook.Sheets("file_path").Range("F2")
+    
+    Application.DisplayAlerts = False
+    
+    With OutlookMail
+        .display
+    End With
+    
+    signature = OutlookMail.htmlBody
+
+    '// Let us create the email message and display it
+    '// Make sure to change the parameters below
+    With OutlookMail
+        .To = Sheets("Read_me").Range("H36").Value
+        .CC = Sheets("Read_me").Range("H37").Value
+        .Subject = "DF - Import format - " & sDate
+        .htmlBody = "Hello Jan, " & "<br>" & "<br>" & _
+        "Here is the new report. Please let me know if you have any issues." & _
+        signature
+        .Attachments.Add ActiveWorkbook.FullName
+        .Send
+    End With
+
+    Set OutlookMail = Nothing
+    Set OutlookApp = Nothing
+    
+    Application.DisplayAlerts = True
+
+
+End Sub
+
+
+
+
+'****************************************************************************************************
+' Updates capacity summary report and saves as
+'****************************************************************************************************
+Sub cap_update()
+
+    Dim DateCheck   As String
+    Dim NameCheck   As String
+    
+    Dim SavePath    As String
+    Dim SaveAs      As String
+    Dim FileName    As String
+    Dim sDate       As String
+
+'    Application.CalculateFull
+    Worksheets("file_path").Calculate
+
+    strFolder = ThisWorkbook.Sheets("file_path").Range("B3").Value
+'    strFile = Dir(strFolder & "*.xlsx")
+
+    Workbooks.Open (strFolder & "Capacity Summary Report - MASTER.xlsm"), ReadOnly:=True
+    Workbooks.Open (strFolder & "Capacity Report Archives\- Capacity Summary Report - Data.csv")
+
+
+'***** Check if file already exists *****
+'****************************************
+
+    '// Save it Path
+    SavePath = ThisWorkbook.Path & "\DF - Capacity Summary Report\"
+    DateCheck = Format(Workbooks("- Capacity Summary Report - Data.csv").Sheets("- Capacity Summary Report - Dat").Range("A2"), "YYYYMMDD")
+    NameCheck = "DF - Capacity Summary Report - " & DateCheck & ".xlsm"
+
+    If Dir(SavePath & NameCheck) <> "" Then
+        Windows("Capacity Summary Report - MASTER.xlsm").Close False
+        Windows("- Capacity Summary Report - Data.csv").Close False
+        Exit Sub
+    End If
+
+
+' Update Capacity Summary Report
+'****************************************************************************************************
+        
+'***** Update oracle_data sheet *****
+'************************************
+    Workbooks("Capacity Summary Report - MASTER.xlsm").Sheets("oracle_data").Activate
+       
+    Application.Calculation = xlCalculationManual
+       
+    Range("B10").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.ClearContents
+    Range("B10").Select
+    
+    Windows("- Capacity Summary Report - Data.csv").Activate
+    
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    
+    Windows("Capacity Summary Report - MASTER.xlsm").Activate
+    Range("B10").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    
+    '// Run rack_breakdown update code
+    Application.Run "'Capacity Summary Report - MASTER.xlsm'!Update_RB"
+
+    '// Run capacity_breakdown update code
+    Application.Run "'Capacity Summary Report - MASTER.xlsm'!Update_Capacity"
+    
+    
+    Workbooks("Capacity Summary Report - Master.xlsm").Sheets("rack_breakdown").Select
+    Cells.Select
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    
+
+'***** Save updated capacity report *****
+'****************************************
+
+    '// Format the date on "B11" to YYYYMMDD
+    sDate = Format(Workbooks("Capacity Summary Report - MASTER.xlsm").Sheets("oracle_data").Range("B11"), "YYYYMMDD")
+
+    '// File Name
+    FileName = "DF - Capacity Summary Report - " & sDate
+    
+    '// Save with File Name & Date & .pdf
+    SaveAs = FileName & ".xlsm"
+        Application.DisplayAlerts = True
+
+        '// Export Active Sheet as pdf
+        'ActiveSheet.ExportAsFixedFormat Type:=xlTypePDF, FileName:= _
+        '    SavePath & SaveAs
+
+    Application.DisplayAlerts = False
+    
+    '// Delete unneeded sheets
+    Sheets("detailed_checks").Delete
+    Sheets("site_assumptions").Delete
+    Sheets("ps_readings").Delete
+
+
+'    Workbooks("Capacity Summary Report - MASTER.xlsm").SaveAs SavePath & "\" & SaveAs, FileFormat:=52
+    Workbooks("Capacity Summary Report - MASTER.xlsm").Close _
+    SaveChanges:=True, _
+    FileName:=SavePath & FileName
+
+    '// Added below to Capacity Summary Report
+    Windows("- Capacity Summary Report - Data.csv").Close False
+'    Windows("- Capacity Summary Report - Rack Breakdown.csv").Close False
+    
+    Application.Calculation = xlCalculationAutomatic
+    Application.DisplayAlerts = True
+
+
+End Sub
+
+
+
+
+'****************************************************************************************************
+' Updates Import File data and saves as
+'****************************************************************************************************
+Sub import_update()
+
+    Dim SavePath    As String
+    Dim SaveAs      As String
+    Dim FileName    As String
+    Dim sDate       As String
+    Dim answer      As Integer
+
+'    answer = MsgBox("The data is the same, do you want to continue with the export?", vbQuestion + vbYesNo + vbDefaultButton2, "Continue?")
+'
+'    '// Refreshes date table
+'    Range("Table_Data_Date[Date]").Select
+'    Application.CutCopyMode = False
+'    Selection.ListObject.QueryTable.Refresh BackgroundQuery:=False
+'
+'    If Sheets("file_path").Range("E2").Value = Sheets("file_path").Range("E4").Value Then
+'    Else
+
+    '// Refresh File Path table
+'    ThisWorkbook.Sheets("file_path").ListObjects("file_path").Refresh
+    ThisWorkbook.Sheets("file_path").Range("A1").CurrentRegion.Calculate
+    ThisWorkbook.Sheets("file_path").Calculate
+
+    '// Update data in file
+    ThisWorkbook.RefreshAll
+    
+    '// Save it Path
+    SavePath = ThisWorkbook.Path
+
+    '// File Name
+    FileName = "DF - Import Format - "
+
+    '// Format the on "B4" to YYYY-MM-DD
+    'sDate = Format(Sheets("Sheet1").Range("B4"), "YYYY-MM-DD")
+    sDate = ThisWorkbook.Sheets("file_path").Range("F2")
+
+    '// Save with File Name & Date & .pdf
+    
+    
+    SaveAs = FileName & sDate & ".xlsx"
+        Application.DisplayAlerts = True
+
+        '// Export Active Sheet as pdf
+        'ActiveSheet.ExportAsFixedFormat Type:=xlTypePDF, FileName:= _
+        '    SavePath & SaveAs
+        
+    '// Copies data date into error checking cell
+    ThisWorkbook.Sheets("file_path").Range("E4").Value = ThisWorkbook.Sheets("file_path").Range("E2").Value
+'    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+'        :=False, Transpose:=False
+
+    Application.Calculation = xlCalculationAutomatic
+        
+    If Len(Dir(SavePath & "/" & SaveAs, vbNormal)) > 0 Then
+        MsgBox "File already exists. Please ensure data has been properly updated. Exiting...", vbExclamation, "File Exists"
+        Exit Sub
+    End If
+    
+    ThisWorkbook.Save
+    Application.DisplayAlerts = False
+
+    ActiveWorkbook.SaveAs SavePath & "/" & SaveAs, FileFormat:=51
+
+    'MsgBox "Do not forget to import this file to Decision Focus.", vbCritical  //  Moved to Module 1.full_update
+    
+    Application.DisplayAlerts = True
+
+
+End Sub
