@@ -1,0 +1,127 @@
+'****************************************************************************************************
+' Updates all data sheets and refreshes all tables
+'****************************************************************************************************
+Sub full_update()
+
+    Application.DisplayAlerts = False
+    
+    Dim site As String
+    site = Sheets("file_path").Range("B2").Value
+
+''***** Unzips folder and copy and replaces CSV data file to destination folder *****
+''***********************************************************************************
+'    Dim MainFolder As String
+'    Dim ZipFolder As String
+'    Dim DestinationFolder As String
+'    Dim oShell As Object
+'    Dim oMainFolder As Object
+'    Dim oDestinationFolder As Object
+'    Dim oZipFolder As Object
+'    Dim oZipItems As Object
+'
+'    ' Define the folder names
+'    MainFolder = ThisWorkbook.Path & "\Archive\"
+'    ZipFolder = "Liquidation and EOS Servers in Racks - DAL13 and WDC04 - Rack Data.csv.zip"
+'
+'    ' https://docs.microsoft.com/en-us/windows/desktop/shell/folder-copyhere
+'    '   4   Do not display a progress dialog box.
+'    '   16  Respond with "Yes to All" for any dialog box that is displayed.
+'        CopyHereFlags = 4 + 16
+'
+'    ' Acquire the folder items
+'    ' create the shell object
+'    Set oShell = CreateObject("Shell.Application")
+'    ' create the main folder object as Folder3 item
+'    Set oMainFolder = oShell.Namespace(CVar(MainFolder)) 'argument must be a variant
+'    ' create the destination folder object as Folder3 item
+''   Set oDestinationFolder = oMainFolder.Items.Item(CVar(destinationFolder & "\")).GetFolder
+'    ' create the zip folder object as Folder3
+'       Set oZipFolder = oMainFolder.Items.Item(CVar(ZipFolder)).GetFolder
+'
+'    ' Extract the zip folder items and write to desination folder
+'    oMainFolder.CopyHere oZipFolder.Items, CopyHereFlags
+'
+
+'***** This updates the data sheets and the rack breakdown table *****
+'*********************************************************************
+
+'    Application.Calculation = xlCalculationManual
+    
+    '// Update invoice_data sheet
+    Sheets("invoice_data").Select
+       
+'    Workbooks.Open (ThisWorkbook.Path & "\DAL10 - invoice_data.csv")
+    Workbooks.Open (Environ("USERPROFILE") & "\Box\IBM Cloud Capacity\Reports\Projects\- Server and Invoice Data Files\" & site & " - invoice_data.csv")
+
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    
+    ThisWorkbook.Activate
+    Sheets("invoice_data").Range("A1").PasteSpecial Paste:=xlPasteValues
+'    ActiveSheet.PasteSpecial Paste:=xlPasteValues
+
+    Selection.Cells(Selection.Rows.Count, 1).Activate
+    ActiveCell.Offset(1).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.EntireRow.Delete Shift:=xlUp
+    
+    
+    '// Update server_data sheet
+    Sheets("server_data").Select
+    Workbooks.Open (Environ("USERPROFILE") & "\Box\IBM Cloud Capacity\Reports\Projects\- Server and Invoice Data Files\" & site & " - server_data.csv")
+
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    
+    ThisWorkbook.Activate
+    Sheets("server_data").Range("A1").PasteSpecial Paste:=xlPasteValues
+
+    Selection.Cells(Selection.Rows.Count, 1).Activate
+    ActiveCell.Offset(1).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.EntireRow.Delete Shift:=xlUp
+
+
+    '// Update vsi_data sheet
+    Sheets("vsi_data").Select
+    Workbooks.Open (Environ("USERPROFILE") & "\Box\IBM Cloud Capacity\Reports\Projects\- Server and Invoice Data Files\" & site & " - vsi_data.csv")
+
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    
+    ThisWorkbook.Activate
+    Sheets("vsi_data").Range("A1").PasteSpecial Paste:=xlPasteValues
+
+    Selection.Cells(Selection.Rows.Count, 1).Activate
+    ActiveCell.Offset(1).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.EntireRow.Delete Shift:=xlUp
+    
+    
+'***** Update trend sheet *****
+'******************************
+
+    If Sheets("trend").Range("B7").Value = True Then
+        GoTo Continue
+    Else
+        Sheets("trend").Select
+        Range("B5").Select
+        Range(Selection, Selection.End(xlToRight)).Copy
+        Sheets("trend").Cells(Rows.Count, 2).End(xlUp).Offset(1, 0).PasteSpecial xlPasteValues
+        Application.CutCopyMode = False
+        
+    End If
+    
+Continue:
+'    Windows("DAL13 - invoice_data.csv").Close SaveChanges:=False
+    Windows(site & " - invoice_data.csv").Close SaveChanges:=False
+    Windows(site & " - server_data.csv").Close SaveChanges:=False
+    Windows(site & " - vsi_data.csv").Close SaveChanges:=False
+    
+    Application.DisplayAlerts = True
+    ThisWorkbook.RefreshAll
+    
+End Sub
