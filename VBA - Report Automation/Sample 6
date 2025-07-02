@@ -1,3 +1,6 @@
+'****************************************************************************************************
+' Prompts to ensure data folder is updated then updates data and tables
+'****************************************************************************************************
 Sub full_update()
 
     Application.DisplayAlerts = False
