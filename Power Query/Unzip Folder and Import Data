@@ -1,0 +1,18 @@
+let
+    Source = Excel.CurrentWorkbook(){[Name="tbl_file_path"]}[Content],
+    #"Changed Type" = Table.TransformColumnTypes(Source,{{"File", type text}, {"File Path", type text}}),
+    #"File Path" = #"Changed Type"{0}[File Path]&"QTS Power Reports\",
+    #"Folder Source" = Folder.Contents(#"File Path"),
+    #"Remove Temp Files" = Table.SelectRows(#"Folder Source", each not Text.StartsWith([Name], "~$")),
+    #"Remove Power Report" = Table.SelectRows(#"Remove Temp Files", each not Text.StartsWith([Name], "DAL10")),
+    #"Filtered Rows" = Table.SelectRows(#"Remove Power Report", each ([Name] <> "Archive")),
+    #"Filtered to Latest File" = Table.SelectRows(#"Filtered Rows", let latest = List.Max(#"Filtered Rows"[Date modified]) in each [Date modified] = latest),
+    #"Added Custom" = Table.AddColumn(#"Filtered to Latest File", "Zip File Address", each [Folder Path]&[Name]),
+    #"Subscriptions_PowerLocation_DAILY_06-27-2024_CPY000000202535 zip" = #"Added Custom"{0}[Zip File Address],
+    Unzip_folder = UnZIP(#"Subscriptions_PowerLocation_DAILY_06-27-2024_CPY000000202535 zip"),
+    Unzip_folder1 = Unzip_folder{0},
+    Content = Unzip_folder1[Content],
+    #"Imported Excel Workbook" = Excel.Workbook(Content),
+        Summary_Sheet = #"Imported Excel Workbook"{[Item="Summary",Kind="Sheet"]}[Data]
+in
+    Summary_Sheet
