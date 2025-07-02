@@ -1,0 +1,10 @@
+let
+    Source = Web.Page(Web.Contents("https://www.federalreserve.gov/releases/h10/current/")),
+    Data0 = Source{0}[Data],
+    #"Demoted Headers" = Table.DemoteHeaders(Data0),
+    #"Removed Columns" = Table.RemoveColumns(#"Demoted Headers",{"Column8", "Column9"}),
+    #"Duplicated Column" = Table.DuplicateColumn(#"Removed Columns", "Column7", "Column7 - Copy"),
+    #"Promoted Headers" = Table.PromoteHeaders(#"Duplicated Column", [PromoteAllScalars=true]),
+    #"Renamed Columns" = Table.RenameColumns(#"Promoted Headers",{{List.Last(Table.ColumnNames(#"Promoted Headers")), "Latest Value"}})
+in
+    #"Renamed Columns"
