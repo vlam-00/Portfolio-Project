@@ -1,0 +1,233 @@
+Sub full_update()
+
+    Application.DisplayAlerts = False
+    ThisWorkbook.Sheets("file_path").Range("E6").Value = Format(Now, "mm/dd/yyyy HH:mm:ss")
+
+'***** Prompts for updating data files in Box Drive *****
+'********************************************************
+    Dim Answer As String
+
+    Answer = MsgBox("Data files have to be uploaded to Box Drive manually. Do you want to open and export the Cognos reports?", vbQuestion + vbYesNoCancel, "Export Data Files?")
+
+    If Answer = vbYes Then
+        ThisWorkbook.Sheets("instructions").Range("F14").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for hardware_data
+        ThisWorkbook.Sheets("instructions").Range("F15").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for component_data
+        
+'        '// Open separated component reports
+'        ThisWorkbook.Sheets("instructions").Range("F27").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for DRIVE CONTROLLER data
+'        ThisWorkbook.Sheets("instructions").Range("F28").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for GPU data
+'        ThisWorkbook.Sheets("instructions").Range("F29").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for HARD DRIVE data
+'        ThisWorkbook.Sheets("instructions").Range("F30").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for MODULE data
+'        ThisWorkbook.Sheets("instructions").Range("F31").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for NIC data
+'        ThisWorkbook.Sheets("instructions").Range("F32").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for PROCESSOR data
+'        ThisWorkbook.Sheets("instructions").Range("F33").Hyperlinks(1).Follow NewWindow:=True  '// Open and export Cognos report for RAM data
+        
+    ElseIf Answer = vbNo Then
+        GoTo Continue
+    Else
+        Exit Sub
+    End If
+
+
+    Answer = MsgBox("Have the new data files been uploaded to Box Drive?" & vbNewLine & vbNewLine & "Click YES to CONTINUE the update." & vbNewLine & "Click NO to CANCEL the update.", vbQuestion + vbYesNo, "Data Files Uploaded?")
+
+    If Answer = vbYes Then
+        GoTo Continue
+    Else
+        Exit Sub
+    End If
+
+
+Continue:
+'***** This updates the data sheets *****
+'****************************************
+
+    ThisWorkbook.RefreshAll
+    Application.Calculation = xlCalculationManual
+
+    '// Update component_data sheet
+    Sheets("component_data").Select
+
+    Workbooks.Open (ThisWorkbook.Path & "\- Data Files\CMREP-234 - component_data.csv")
+
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+
+    ThisWorkbook.Activate
+    Range("A1").PasteSpecial Paste:=xlPasteValues
+
+    Selection.Cells(Selection.Rows.Count, 1).Activate
+    ActiveCell.Offset(1).Select
+    If ActiveCell.Value <> "" Then
+        Range(Selection, Selection.End(xlDown)).Select
+        Selection.EntireRow.Delete Shift:=xlUp
+    End If
+    
+    
+    '// Update hardware_data sheet
+    Sheets("hardware_data").Select
+
+    Workbooks.Open (ThisWorkbook.Path & "\- Data Files\CMREP-234 - hardware_data.csv")
+
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+
+    ThisWorkbook.Activate
+    Range("A1").PasteSpecial Paste:=xlPasteValues
+
+    Selection.Cells(Selection.Rows.Count, 1).Activate
+    ActiveCell.Offset(1).Select
+    If ActiveCell.Value <> "" Then
+        Range(Selection, Selection.End(xlDown)).Select
+        Selection.EntireRow.Delete Shift:=xlUp
+    End If
+
+
+    Windows("CMREP-234 - component_data.csv").Close SaveChanges:=False
+    Windows("CMREP-234 - hardware_data.csv").Close SaveChanges:=False
+    
+    Application.Calculation = xlCalculationAutomatic
+    Application.Calculation = xlCalculationManual
+
+    ThisWorkbook.RefreshAll
+
+
+'***** This updates the formulas in the data sheets *****
+'********************************************************
+    
+    '// Opens a sheet based on date, searches backward from today til it finds a matching date
+    Dim dtTestDate As Date
+    Dim sStartWB As String
+    Dim sPath As String
+    Dim dtEarliest As Date
+    Dim wb As Workbook
+    
+    sPath = ThisWorkbook.Sheets("file_path").Range("B7").Value
+    dtEarliest = DateAdd("d", -60, Date)   '// #7/31/2017#  '--to stop loop if file not found by earliest valid date.
+
+    dtTestDate = Date
+    sStartWB = ActiveWorkbook.Name
+    
+    While dtTestDate >= dtEarliest
+        On Error Resume Next
+        Workbooks.Open sPath & ThisWorkbook.Sheets("file_path").Range("D2").Value
+        dtTestDate = dtTestDate - 7
+        On Error GoTo 0
+    Wend
+    
+    Set wb = ActiveWorkbook
+    
+    '// This section will update the tbl_po table on the ancillary sheet.
+    wb.Activate
+    Range("REGISTER_FUTURE_DEPR[[#All],[CTY_SPEC_REFNUM]]").Copy
+    ThisWorkbook.Sheets("ancillary").Visible = True
+    ThisWorkbook.Sheets("ancillary").Activate
+    Sheets("ancillary").Range("H1").PasteSpecial Paste:=xlPasteValues
+    wb.Activate
+    Range("REGISTER_FUTURE_DEPR[[#All],[CURRENCY]:[DATA_CENTER]]").Copy
+    ThisWorkbook.Sheets("ancillary").Activate
+    Sheets("ancillary").Range("F1").PasteSpecial Paste:=xlPasteValues
+    Range(Selection, Selection.End(xlToRight)).Select
+    Application.CutCopyMode = False
+    Selection.RemoveDuplicates Columns:=Array(1, 2, 3), _
+        Header:=xlYes
+    
+    Range("F1", Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    Sheets("ancillary").Range("A1").PasteSpecial Paste:=xlPasteValues
+    Selection.Cells(Selection.Rows.Count, 1).Activate
+    ActiveCell.Offset(1).Select
+    If ActiveCell.Value <> "" Then
+        Range(Selection, Selection.End(xlDown)).Select
+        Selection.EntireRow.Delete Shift:=xlUp
+    End If
+
+    '// This will update formula columns and paste as values.
+    ThisWorkbook.Activate
+    Application.Calculation = xlCalculationAutomatic
+    
+    Sheets("file_path").Range("K12", Sheets("file_path").Range("K12").End(xlDown)).Copy
+    Sheets("component_po").Select
+'    Sheets("component_po").Range("E2").Select
+'    Range(Selection, Selection.End(xlDown)).Select
+    ThisWorkbook.Sheets("component_po").ListObjects("component_po").ListColumns(5).DataBodyRange.Select
+    Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+        SkipBlanks:=False, Transpose:=True
+    Application.CutCopyMode = False
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    
+    Sheets("file_path").Range("H12", Sheets("file_path").Range("H12").End(xlDown)).Copy
+    Sheets("component_data").Select
+'    Sheets("component_data").Range("Y2").Select
+'    Range(Selection, Selection.End(xlDown)).Select
+    ThisWorkbook.Sheets("component_data").ListObjects("component_data").ListColumns(26).DataBodyRange.Select
+    Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+        SkipBlanks:=False, Transpose:=True
+    Application.CutCopyMode = False
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    
+    Sheets("file_path").Range("E12", Sheets("file_path").Range("E12").End(xlDown)).Copy
+    Sheets("hardware_data").Select
+'    Sheets("hardware_data").Range("AC2").Select
+'    Range(Selection, Selection.End(xlDown)).Select
+    ThisWorkbook.Sheets("hardware_data").ListObjects("hardware_data").ListColumns(42).DataBodyRange.Select
+    Selection.PasteSpecial Paste:=xlPasteFormulas, Operation:=xlNone, _
+        SkipBlanks:=False, Transpose:=True
+    Application.CutCopyMode = False
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+
+
+'***** Selects cell A1 and sets every sheet to the default position *****
+'************************************************************************
+    Dim sht As Worksheet
+    Set csheet = ActiveSheet
+    
+    For Each sht In ActiveWorkbook.Worksheets
+        If sht.Visible Then
+            sht.Activate
+            Range("a1").Select
+            ActiveWindow.ScrollRow = 1
+            ActiveWindow.ScrollColumn = 1
+        End If
+    Next sht
+    
+    Sheets("summary").Activate
+    
+    ThisWorkbook.RefreshAll
+    
+    
+''***** Update trend sheet - Don't need this yet *****
+''****************************************************
+'    If Sheets("trend").Range("B7").Value = True Then
+'        Exit Sub
+'    Else
+'
+'    ' Update first trend sheet
+'        Sheets("trend").Select
+'        Range("B5").Select
+'        Range(Selection, Selection.End(xlToRight)).Copy
+'        Sheets("trend").Cells(Rows.Count, 2).End(xlUp).Offset(1, 0).PasteSpecial xlPasteValues
+'        Application.CutCopyMode = False
+'
+'    End If
+'
+'    ActiveWorkbook.RefreshAll
+'    Application.Calculation = xlCalculationAutomatic
+'
+'    Sheets("summary").Select
+
+    Application.DisplayAlerts = True
+    ThisWorkbook.Sheets("file_path").Range("E7").Value = Format(Now, "mm/dd/yyyy HH:mm:ss")
+
+End Sub
+
+
