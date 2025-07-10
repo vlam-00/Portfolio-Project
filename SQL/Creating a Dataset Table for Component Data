@@ -1,0 +1,199 @@
+/* user=vlam reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=2G99CMv9Csjd442wvw8vCCly2s9wGq9MwGMdMdMC */ 
+WITH 
+"Component_Hardware_Lease_Business" AS 
+    (
+    SELECT
+        "HDW_LEASE_DIM"."HDW_LEASE_ID" AS "Hardware_Lease_ID", 
+        "HDW_LEASE_DIM"."PO_NB" AS "PO_Number", 
+        "HDW_LEASE_DIM"."IBM_PO_NB" AS "IBM_PO_Number", 
+        "HDW_LEASE_DIM"."HDW_LEASE_KY" AS "HDW_LEASE_KY"
+    FROM
+        "EDW2"."HDW_LEASE_DIM" "HDW_LEASE_DIM"
+            INNER JOIN "EDW2"."CURR_DIM" "CURR_DIM"
+            ON "HDW_LEASE_DIM"."CURR_KY" = "CURR_DIM"."CURR_KY"
+    ), 
+"Component_Status_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Component_Status_Date"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    ), 
+"Snapshot_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Date0"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    )
+SELECT
+    "Snapshot_Calendar"."Date0" AS "Date0", 
+    (TIMESTAMP '2025-01-12 23:59:59') AS "Data_Last_Updated", 
+    to_char(sysdate, 'MM/DD/YYYY HH:MI:SS AM') AS "Data_Run", 
+    "Location"."DATA_CTR_ID" AS "Datacenter", 
+    "Component_Model"."HDW_GEN_CMPNT_TY_NM" AS "Generic_Component_Type", 
+    "Component_Status"."CMPNT_STAT_NM" AS "Component_Status", 
+    (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) AS "Component_Status_Duration__Days_", 
+    CASE 
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) BETWEEN 0 AND 91 THEN '0 - 3 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) BETWEEN 92 AND 183 THEN '3 - 6 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) BETWEEN 184 AND 365 THEN '6 -12 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) BETWEEN 366 AND 730 THEN '12 - 24 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) > 730 THEN '24+ Months'
+    END AS "Component_Status_Duration_Group", 
+    CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) AS "Component_Age__Months_", 
+    CASE 
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 0 AND 12 THEN '0 - 1 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 13 AND 24 THEN '1 - 2 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 25 AND 36 THEN '2 - 3 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 37 AND 48 THEN '3 - 4 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 49 AND 60 THEN '4 - 5 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 61 AND 72 THEN '5 - 6 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) > 72 THEN '6+ Years'
+    END AS "Component_Age_Group", 
+    "Component_Model"."HDW_GEN_CMPNT_MOD_ID" AS "Generic_Component_Model_ID", 
+    "Component_Model"."HDW_GEN_CMPNT_DE" AS "Generic_Component_Description", 
+    "Component_Model"."CMPNT_MOD_VEND_NM" AS "Component_Model_Vendor", 
+    "Component_Model"."CMPNT_MOD_NM" AS "Component_Model_Name", 
+    "Component_Model"."CMPNT_MOD_VER_CD" AS "Component_Model_Version_Code", 
+    "Component_Model"."CMPNT_MOD_DE" AS "Component_Model_Description", 
+    "Component_Model"."CAP_QY" AS "Capacity", 
+    SUM("Fact___Component_Daily_Snapshot"."CMPNT_CT") AS "Component_Count", 
+    "Component_Hardware_Lease_Business"."Hardware_Lease_ID" AS "Component_Lease_ID", 
+    "Component_Hardware_Lease_Business"."PO_Number" AS "PO_Number", 
+    "Component_Hardware_Lease_Business"."IBM_PO_Number" AS "IBM_PO_Number", 
+    "Component_Indicators"."MFR_INSTALL_IN" AS "Manufacturer_Installed_Indicator", 
+    "Component_Indicators"."NEVER_INSTALL_IN" AS "Never_Installed_Indicator", 
+    CASE 
+        WHEN 
+            "Component_Indicators"."MFR_INSTALL_IN" = 'N' AND
+            "Component_Indicators"."NEVER_INSTALL_IN" = 'Y'
+            THEN
+                'Y'
+        ELSE 'N'
+    END AS "New_Flag", 
+    "Hardware_Status"."HDW_STAT_NM" AS "Hardware_Status"
+FROM
+    "Component_Hardware_Lease_Business"
+        INNER JOIN "EDW2"."CMPNT_DAILY_SNPSHT_FCT" "Fact___Component_Daily_Snapshot"
+        ON "Component_Hardware_Lease_Business"."HDW_LEASE_KY" = "Fact___Component_Daily_Snapshot"."CMPNT_LEASE_KY"
+            INNER JOIN "EDW2"."CMPNT_SNPSHT_IN_DIM" "Component_Indicators"
+            ON "Component_Indicators"."CMPNT_SNPSHT_IN_KY" = "Fact___Component_Daily_Snapshot"."CMPNT_SNPSHT_IN_KY"
+                INNER JOIN "EDW2"."CMPNT_MOD_DIM" "Component_Model"
+                ON "Component_Model"."CMPNT_MOD_KY" = "Fact___Component_Daily_Snapshot"."CMPNT_MOD_KY"
+                    INNER JOIN "EDW2"."CMPNT_STAT_DIM" "Component_Status"
+                    ON "Component_Status"."CMPNT_STAT_KY" = "Fact___Component_Daily_Snapshot"."CMPNT_STAT_KY"
+                        INNER JOIN "Component_Status_Calendar"
+                        ON "Component_Status_Calendar"."CAL_DT_KY" = "Fact___Component_Daily_Snapshot"."CMPNT_STAT_DT_KY"
+                            INNER JOIN "EDW2"."HDW_STAT_DIM" "Hardware_Status"
+                            ON "Hardware_Status"."HDW_STAT_KY" = "Fact___Component_Daily_Snapshot"."HDW_STAT_KY"
+                                INNER JOIN "EDW2"."LCTN_DIM" "Location"
+                                ON "Location"."LCTN_KY" = "Fact___Component_Daily_Snapshot"."LCTN_KY"
+                                    INNER JOIN "Snapshot_Calendar"
+                                    ON "Snapshot_Calendar"."CAL_DT_KY" = "Fact___Component_Daily_Snapshot"."CMPNT_SNPSHT_DT_KY" 
+WHERE 
+    "Location"."LCTN_HIER_FRST_LVL_NM" IN ( 
+        'datacenter' ) AND
+    NOT ( "Component_Status"."CMPNT_STAT_NM" IN ( 
+        'Admin Hold', 
+        'Deleted', 
+        'Liquidation-Retired', 
+        'Liquidation-Retired-Helpdesk', 
+        'Offsite Transfer', 
+        'Rma-Retired', 
+        'Reallocated' ) ) AND
+    "Component_Model"."HDW_GEN_CMPNT_TY_NM" IN ( 
+        'Drive Controller', 
+        'GPU', 
+        'Hard Drive', 
+        'Hard drive', 
+        'Module', 
+        'Network Interface Card', 
+        'Processor', 
+        'RAM' ) AND
+    NOT ( "Location"."DATA_CTR_ID" IN ( 
+        'DLLSTX2', 
+        'DLLSTX6', 
+        'DLLSTX7', 
+        'ZNO DATACENTER' ) ) AND
+    trunc("Snapshot_Calendar"."Date0") = trunc(sysdate, 'MM') - 1 AND
+    "Hardware_Status"."HDW_STAT_GRP_NM" <> 'Liquidation' AND
+    ("Component_Status"."CMPNT_STAT_GRP_NM" <> 'Liquidation' OR
+    "Component_Status"."CMPNT_STAT_NM" = 'Liquidation-Prep') 
+GROUP BY 
+    "Snapshot_Calendar"."Date0", 
+    to_char(sysdate, 'MM/DD/YYYY HH:MI:SS AM'), 
+    "Location"."DATA_CTR_ID", 
+    "Component_Model"."HDW_GEN_CMPNT_TY_NM", 
+    "Component_Status"."CMPNT_STAT_NM", 
+    (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )), 
+    CASE 
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) BETWEEN 0 AND 91 THEN '0 - 3 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) BETWEEN 92 AND 183 THEN '3 - 6 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) BETWEEN 184 AND 365 THEN '6 -12 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) BETWEEN 366 AND 730 THEN '12 - 24 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Component_Status_Calendar"."Component_Status_Date" AS TIMESTAMP ) )) > 730 THEN '24+ Months'
+    END, 
+    CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")), 
+    CASE 
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 0 AND 12 THEN '0 - 1 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 13 AND 24 THEN '1 - 2 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 25 AND 36 THEN '2 - 3 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 37 AND 48 THEN '3 - 4 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 49 AND 60 THEN '4 - 5 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) BETWEEN 61 AND 72 THEN '5 - 6 Years'
+        WHEN CEIL(MONTHS_BETWEEN("Snapshot_Calendar"."Date0", "Fact___Component_Daily_Snapshot"."CMPNT_CREATE_DT")) > 72 THEN '6+ Years'
+    END, 
+    "Component_Model"."HDW_GEN_CMPNT_MOD_ID", 
+    "Component_Model"."HDW_GEN_CMPNT_DE", 
+    "Component_Model"."CMPNT_MOD_VEND_NM", 
+    "Component_Model"."CMPNT_MOD_NM", 
+    "Component_Model"."CMPNT_MOD_VER_CD", 
+    "Component_Model"."CMPNT_MOD_DE", 
+    "Component_Model"."CAP_QY", 
+    "Component_Hardware_Lease_Business"."Hardware_Lease_ID", 
+    "Component_Hardware_Lease_Business"."PO_Number", 
+    "Component_Hardware_Lease_Business"."IBM_PO_Number", 
+    "Component_Indicators"."MFR_INSTALL_IN", 
+    "Component_Indicators"."NEVER_INSTALL_IN", 
+    CASE 
+        WHEN 
+            "Component_Indicators"."MFR_INSTALL_IN" = 'N' AND
+            "Component_Indicators"."NEVER_INSTALL_IN" = 'Y'
+            THEN
+                'Y'
+        ELSE 'N'
+    END, 
+    "Hardware_Status"."HDW_STAT_NM" 
+ORDER BY 
+    "Datacenter" ASC NULLS LAST, 
+    "Generic_Component_Type" ASC NULLS LAST, 
+    "Date0" ASC NULLS LAST, 
+    "Data_Last_Updated" ASC NULLS LAST, 
+    "Data_Run" ASC NULLS LAST, 
+    "Component_Status" ASC NULLS LAST, 
+    "Component_Status_Duration__Days_" ASC NULLS LAST, 
+    "Component_Status_Duration_Group" ASC NULLS LAST, 
+    "Component_Age__Months_" ASC NULLS LAST, 
+    "Component_Age_Group" ASC NULLS LAST, 
+    "Generic_Component_Model_ID" ASC NULLS LAST, 
+    "Generic_Component_Description" ASC NULLS LAST, 
+    "Component_Model_Vendor" ASC NULLS LAST, 
+    "Component_Model_Name" ASC NULLS LAST, 
+    "Component_Model_Version_Code" ASC NULLS LAST, 
+    "Component_Model_Description" ASC NULLS LAST, 
+    "Capacity" ASC NULLS LAST, 
+    "Component_Lease_ID" ASC NULLS LAST, 
+    "PO_Number" ASC NULLS LAST, 
+    "IBM_PO_Number" ASC NULLS LAST, 
+    "Manufacturer_Installed_Indicator" ASC NULLS LAST, 
+    "Never_Installed_Indicator" ASC NULLS LAST, 
+    "New_Flag" ASC NULLS LAST, 
+    "Hardware_Status" ASC NULLS LAST
+
