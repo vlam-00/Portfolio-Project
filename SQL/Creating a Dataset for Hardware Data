@@ -1,0 +1,310 @@
+/* user=VINCENT LAM reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=48Mhw9MwlGCywd4hlvwwCvdv24vdqs9vhvMydCw2 */ 
+WITH 
+"Account" AS 
+    (
+    SELECT
+        "ACCT_DIM"."ACCT_KY" AS "ACCT_KY", 
+        "ACCT_DIM"."ACCT_DK" AS "ACCT_DK"
+    FROM
+        "EDW2"."BRAND_DIM" "BRAND_DIM"
+            INNER JOIN "EDW2"."ACCT_DIM" "ACCT_DIM"
+            ON "BRAND_DIM"."BRAND_KY" = "ACCT_DIM"."BRAND_KY"
+                INNER JOIN "EDW2"."CTLG_DIM" "CTLG_DIM"
+                ON "BRAND_DIM"."CTLG_KY" = "CTLG_DIM"."CTLG_KY"
+    ), 
+"Snapshot_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Date0"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    ), 
+"Current_Account" AS 
+    (
+    SELECT
+        "ACCT_DIM"."ACCT_ID" AS "IMS_Account_ID", 
+        "ACCT_DIM"."ACCT_LONG_NM" AS "Account_Name", 
+        CASE 
+            WHEN 
+                
+                    CASE 
+                        WHEN "ACCT_DIM"."VAR_ACCT_ID" > 0 THEN "ACCT_DIM"."VAR_NM"
+                        WHEN "ACCT_DIM"."CHAN_ACCT_ID" > 0 THEN "ACCT_DIM"."CHAN_NM"
+                        ELSE "ACCT_DIM"."ORG_UNIT_NM"
+                    END LIKE '%Kyndryl%'
+                THEN
+                    'Kyndryl'
+            ELSE "ACCT_DIM"."IBM_ACCT_CLASS_NM"
+        END AS "IBM_Account_Class", 
+        "ACCT_DIM"."ACCT_TY_NM" AS "IMS_Account_Type", 
+        "ACCT_DIM"."ACCT_DK" AS "ACCT_DK", 
+        'Y' AS "PI"
+    FROM
+        "EDW2"."BRAND_DIM" "BRAND_DIM"
+            INNER JOIN "EDW2"."ACCT_DIM" "ACCT_DIM"
+            ON "BRAND_DIM"."BRAND_KY" = "ACCT_DIM"."BRAND_KY"
+                INNER JOIN "EDW2"."CTLG_DIM" "CTLG_DIM"
+                ON "BRAND_DIM"."CTLG_KY" = "CTLG_DIM"."CTLG_KY" 
+    WHERE 
+        "ACCT_DIM"."SCD_CURR_REC_IN" = 'Y'
+    ), 
+"Hardware_Lease_Business" AS 
+    (
+    SELECT
+        "HDW_LEASE_DIM"."HDW_LEASE_ID" AS "Hardware_Lease_ID", 
+        "HDW_LEASE_DIM"."PO_NB" AS "PO_Number", 
+        "HDW_LEASE_DIM"."IBM_PO_NB" AS "IBM_PO_Number", 
+        "HDW_LEASE_DIM"."LEASE_ORDER_FLAG" AS "Lease_Order_Flag", 
+        "HDW_LEASE_DIM"."HDW_LEASE_KY" AS "HDW_LEASE_KY"
+    FROM
+        "EDW2"."HDW_LEASE_DIM" "HDW_LEASE_DIM"
+            INNER JOIN "EDW2"."CURR_DIM" "CURR_DIM"
+            ON "HDW_LEASE_DIM"."CURR_KY" = "CURR_DIM"."CURR_KY"
+    ), 
+"Hardware_Service_Start_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Service_Start_Date"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    ), 
+"Hardware_Status_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Status_Date"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    )
+SELECT
+    "Snapshot_Calendar"."Date0" AS Date0, 
+    TIMESTAMP '2025-05-06 23:59:59' AS Data_Last_Updated, 
+    to_char(sysdate, 'MM/DD/YYYY HH:MI:SS AM') AS Data_Run, 
+    "Current_Account"."IMS_Account_ID" AS IMS_Account_ID, 
+    "Current_Account"."Account_Name" AS Account_Name, 
+    "Current_Account"."IMS_Account_Type" AS IMS_Account_Type, 
+    "Current_Account"."IBM_Account_Class" AS IBM_Account_Class, 
+    "Location"."DATA_CTR_ID" AS Datacenter, 
+    "Location"."LCTN_PATH_NM" AS Location_Path, 
+    "Hardware"."HDW_TY_NM" AS Hardware_Type, 
+    "Hardware_Status"."HDW_STAT_NM" AS Hardware_Status, 
+    "Hardware_Status"."HDW_STAT_RSN_NM" AS Hardware_Status_Reason, 
+    (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Hardware_Status_Calendar"."Status_Date" AS TIMESTAMP ) )) AS Hardware_Status_Duration__Days_, 
+    CASE 
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Hardware_Status_Calendar"."Status_Date" AS TIMESTAMP ) )) BETWEEN 0 AND 91 THEN '0 - 3 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Hardware_Status_Calendar"."Status_Date" AS TIMESTAMP ) )) BETWEEN 92 AND 183 THEN '3 - 6 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Hardware_Status_Calendar"."Status_Date" AS TIMESTAMP ) )) BETWEEN 184 AND 365 THEN '6 -12 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Hardware_Status_Calendar"."Status_Date" AS TIMESTAMP ) )) BETWEEN 366 AND 730 THEN '12 - 24 Months'
+        WHEN (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Hardware_Status_Calendar"."Status_Date" AS TIMESTAMP ) )) > 730 THEN '24+ Months'
+    END AS Hardware_Status_Duration_Group, 
+    CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) AS Hardware_Age__Months_, 
+    CASE 
+        WHEN CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 0 AND 12 THEN '0 - 1 Years'
+        WHEN CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 13 AND 24 THEN '1 - 2 Years'
+        WHEN CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 25 AND 36 THEN '2 - 3 Years'
+        WHEN CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 37 AND 48 THEN '3 - 4 Years'
+        WHEN CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 49 AND 60 THEN '4 - 5 Years'
+        WHEN CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 61 AND 72 THEN '5 - 6 Years'
+        WHEN CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) > 72 THEN '6+ Years'
+    END AS Hardware_Age_Group, 
+    "Hardware"."MTHBD_MOD_NM" AS Motherboard_Model, 
+    "Hardware"."HDW_CHAS_VEND_NM" AS Chassis_Vendor, 
+    "Hardware"."HDW_CHAS_NM" AS Chassis_Name, 
+    "Hardware"."HDW_CHAS_VER_CD" AS Chassis_Version_Code, 
+    "Hardware"."HDW_CHAS_SIZE_QY" AS Chassis_Size, 
+    "Hardware"."PRCSR_CD_FMLY_NM" AS Processor_Family, 
+    "Hardware"."PRCSR_CD" AS Processor_Code, 
+    "Hardware"."PRCSR_VER_CD" AS Processor_Version_Code, 
+    "Hardware_Config"."RAM_CAP_QY" AS RAM_Total_Capacity, 
+    "Hardware_Config"."DRIVE_CNTLR_SPEC_DE" AS Drive_Controller_Description, 
+    "Hardware"."HOST_NM" AS Hostname, 
+    "Hardware"."HDW_ID" AS Hardware_ID, 
+    "Hardware"."SL_SER_NB" AS Hardware_Internal_Serial_Number, 
+    "Fact___Hardware_Daily_Snapshot"."HDW_CT" AS Hardware_Count,
+/*
+    CAST(TO_CHAR("Hardware"."HDW_CHAS_SIZE_QY",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(4)), 
+    CAST(TO_CHAR("Hardware"."PRCSR_CT",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(1)), 
+*/
+    CAST(TO_CHAR("Hardware"."HDW_CHAS_SIZE_QY",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(4)) || 'U ' || CAST(TO_CHAR("Hardware"."PRCSR_CT",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(1)) || 'x' || "Hardware"."PRCSR_CD" || "Hardware"."PRCSR_VER_CD" AS SKU, 
+    "Last_Hardware_Note"."HDW_INTR_NOTE_TX" AS Last_Hardware_Note, 
+    "Hardware_Lease_Business"."Hardware_Lease_ID" AS Hardware_Lease_ID, 
+    "Hardware_Lease_Business"."PO_Number" AS PO_Number, 
+    "Hardware_Lease_Business"."IBM_PO_Number" AS IBM_PO_Number, 
+    CASE 
+        WHEN 
+            CEIL(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) <= 1 AND
+            "Hardware_Status"."HDW_STAT_GRP_NM" <> 'Active'
+            THEN
+                'Y'
+        ELSE 'N'
+    END AS New_Flag, 
+    "Hardware_Lease_Business"."Lease_Order_Flag" AS Lease_Order_Flag, 
+    "Hardware"."HDW_TAG_NM" AS Hardware_Tag, 
+    "Rack"."RACK_PATH_NM" AS Rack_Path, 
+    "Rack"."RACK_TY_NM" AS Rack_Type, 
+    "Rack"."RACK_SUB_TY_NM" AS Rack_Subtype
+FROM
+    "Account"
+        INNER JOIN "EDW2"."HDW_DAILY_SNPSHT_FCT" "Fact___Hardware_Daily_Snapshot"
+        ON "Account"."ACCT_KY" = "Fact___Hardware_Daily_Snapshot"."ACCT_KY"
+            INNER JOIN "Snapshot_Calendar"
+            ON "Snapshot_Calendar"."CAL_DT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_SNPSHT_DT_KY"
+                INNER JOIN "Current_Account"
+                ON "Current_Account"."ACCT_DK" = "Account"."ACCT_DK"
+                    INNER JOIN "EDW2"."HDW_DIM" "Hardware"
+                    ON "Hardware"."HDW_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_KY"
+                        INNER JOIN "EDW2"."HDW_CMPNT_CONFIG_DIM" "Hardware_Config"
+                        ON "Hardware_Config"."HDW_CMPNT_CONFIG_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_CMPNT_CONFIG_KY"
+                            INNER JOIN "Hardware_Lease_Business"
+                            ON "Hardware_Lease_Business"."HDW_LEASE_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_LEASE_KY"
+                                INNER JOIN "EDW2"."HDW_NOTE_DIM" "Last_Hardware_Note"
+                                ON "Last_Hardware_Note"."HDW_NOTE_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_NOTE_KY"
+                                    INNER JOIN "EDW2"."HDW_STAT_DIM" "Hardware_Status"
+                                    ON "Hardware_Status"."HDW_STAT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_STAT_KY"
+                                        INNER JOIN "Hardware_Service_Start_Calendar"
+                                        ON "Hardware_Service_Start_Calendar"."CAL_DT_KY" = "Hardware"."SVCE_STRT_DT_KY"
+                                            INNER JOIN "Hardware_Status_Calendar"
+                                            ON "Hardware_Status_Calendar"."CAL_DT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_STAT_DT_KY"
+                                                INNER JOIN "EDW2"."LCTN_DIM" "Location"
+                                                ON "Location"."LCTN_KY" = "Fact___Hardware_Daily_Snapshot"."LCTN_KY"
+                                                    INNER JOIN "EDW2"."RACK_DIM" "Rack"
+                                                    ON "Rack"."RACK_KY" = "Fact___Hardware_Daily_Snapshot"."RACK_KY" 
+WHERE 
+    "Location"."LCTN_HIER_FRST_LVL_NM" IN ( 
+        'datacenter' ) AND
+    NOT ( "Hardware_Status"."HDW_STAT_NM" IN ( 
+        'Admin_Hold', 
+        'Deleted', 
+        'Liquidation- Retired', 
+        'Offsite_Transfer', 
+        'Reallocated', 
+        'Retired', 
+        'Returned_To_Customer', 
+        'Rma - Retired' ) ) AND
+    NOT ( "Location"."DATA_CTR_ID" IN ( 
+        'DLLSTX2', 
+        'DLLSTX6', 
+        'DLLSTX7', 
+        'ZNO DATACENTER' ) ) AND
+    trunc("Snapshot_Calendar"."Date0") = trunc(sysdate, 'MM') - 1 AND
+    "Hardware_Status"."HDW_STAT_GRP_NM" <> 'Liquidation' AND
+    "Hardware"."HDW_DEL_IN" = 'N' AND
+    "Hardware"."FAKE_HDW_IN" = 'N'
+/*
+GROUP BY 
+    "Snapshot_Calendar"."Date0", 
+    TIMESTAMP '2025-05-06 23:59:59', 
+    to_char(sysdate, 'MM/DD/YYYY HH:MI:SS AM'), 
+    "Current_Account"."IMS_Account_ID", 
+    "Current_Account"."Account_Name", 
+    "Current_Account"."IMS_Account_Type", 
+    "Current_Account"."IBM_Account_Class", 
+    "Location"."DATA_CTR_ID", 
+    "Location"."LCTN_PATH_NM", 
+    "Hardware"."HDW_TY_NM", 
+    "Hardware_Status"."HDW_STAT_NM", 
+    "Hardware_Status"."HDW_STAT_RSN_NM", 
+    DAYS_BETWEEN("Snapshot_Calendar"."Date0", "Hardware_Status_Calendar"."Status_Date"), 
+    CASE 
+        WHEN DAYS_BETWEEN("Snapshot_Calendar"."Date0", "Hardware_Status_Calendar"."Status_Date") BETWEEN 0 AND 91 THEN '0 - 3 Months'
+        WHEN DAYS_BETWEEN("Snapshot_Calendar"."Date0", "Hardware_Status_Calendar"."Status_Date") BETWEEN 92 AND 183 THEN '3 - 6 Months'
+        WHEN DAYS_BETWEEN("Snapshot_Calendar"."Date0", "Hardware_Status_Calendar"."Status_Date") BETWEEN 184 AND 365 THEN '6 -12 Months'
+        WHEN DAYS_BETWEEN("Snapshot_Calendar"."Date0", "Hardware_Status_Calendar"."Status_Date") BETWEEN 366 AND 730 THEN '12 - 24 Months'
+        WHEN DAYS_BETWEEN("Snapshot_Calendar"."Date0", "Hardware_Status_Calendar"."Status_Date") > 730 THEN '24+ Months'
+    END, 
+    CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")), 
+    CASE 
+        WHEN CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 0 AND 12 THEN '0 - 1 Years'
+        WHEN CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 13 AND 24 THEN '1 - 2 Years'
+        WHEN CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 25 AND 36 THEN '2 - 3 Years'
+        WHEN CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 37 AND 48 THEN '3 - 4 Years'
+        WHEN CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 49 AND 60 THEN '4 - 5 Years'
+        WHEN CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) BETWEEN 61 AND 72 THEN '5 - 6 Years'
+        WHEN CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) > 72 THEN '6+ Years'
+    END, 
+    "Hardware"."MTHBD_MOD_NM", 
+    "Hardware"."HDW_CHAS_VEND_NM", 
+    "Hardware"."HDW_CHAS_NM", 
+    "Hardware"."HDW_CHAS_VER_CD", 
+    "Hardware"."HDW_CHAS_SIZE_QY", 
+    "Hardware"."PRCSR_CD_FMLY_NM", 
+    "Hardware"."PRCSR_CD", 
+    "Hardware"."PRCSR_VER_CD", 
+    "Hardware_Config"."RAM_CAP_QY", 
+    "Hardware_Config"."DRIVE_CNTLR_SPEC_DE", 
+    "Hardware"."HOST_NM", 
+    "Hardware"."HDW_ID", 
+    "Hardware"."SL_SER_NB", 
+    CAST("Hardware"."HDW_CHAS_SIZE_QY" AS VARCHAR(4)) || 'U ' || CAST("Hardware"."PRCSR_CT" AS VARCHAR(1)) || 'x' || CAST(COALESCE(
+        "Hardware"."PRCSR_CD", 
+        '') AS VARCHAR(4)) || CAST(COALESCE(
+        "Hardware"."PRCSR_VER_CD", 
+        '') AS VARCHAR(2)), 
+    "Last_Hardware_Note"."HDW_INTR_NOTE_TX", 
+    "Hardware_Lease_Business"."Hardware_Lease_ID", 
+    "Hardware_Lease_Business"."PO_Number", 
+    "Hardware_Lease_Business"."IBM_PO_Number", 
+    CASE 
+        WHEN 
+            CEILING(months_between("Snapshot_Calendar"."Date0", "Hardware_Service_Start_Calendar"."Service_Start_Date")) <= 1 AND
+            "Hardware_Status"."HDW_STAT_GRP_NM" <> 'Active'
+            THEN
+                'Y'
+        ELSE 'N'
+    END, 
+    "Hardware_Lease_Business"."Lease_Order_Flag", 
+    "Hardware"."HDW_TAG_NM", 
+    "Rack"."RACK_PATH_NM", 
+    "Rack"."RACK_TY_NM", 
+    "Rack"."RACK_SUB_TY_NM" 
+*/
+ORDER BY 
+    Datacenter ASC, 
+    Date0 ASC, 
+    Data_Last_Updated ASC, 
+    Data_Run ASC, 
+    IMS_Account_ID ASC, 
+    Account_Name ASC, 
+    IMS_Account_Type ASC, 
+    IBM_Account_Class ASC, 
+    Location_Path ASC, 
+    Hardware_Type ASC, 
+    Hardware_Status ASC, 
+    Hardware_Status_Reason ASC, 
+    Hardware_Status_Duration__Days_ ASC, 
+    Hardware_Status_Duration_Group ASC, 
+    Hardware_Age__Months_ ASC, 
+    Hardware_Age_Group ASC, 
+    Motherboard_Model ASC, 
+    Chassis_Vendor ASC, 
+    Chassis_Name ASC, 
+    Chassis_Version_Code ASC, 
+    Chassis_Size ASC, 
+    Processor_Family ASC, 
+    Processor_Code ASC, 
+    Processor_Version_Code ASC, 
+    RAM_Total_Capacity ASC, 
+    Drive_Controller_Description ASC, 
+    Hostname ASC, 
+    Hardware_ID ASC, 
+    Hardware_Internal_Serial_Number ASC, 
+    SKU ASC, 
+    Last_Hardware_Note ASC, 
+    Hardware_Lease_ID ASC, 
+    PO_Number ASC, 
+    IBM_PO_Number ASC, 
+    New_Flag ASC, 
+    Lease_Order_Flag ASC, 
+    Hardware_Tag ASC, 
+    Rack_Path ASC, 
+    Rack_Type ASC, 
+    Rack_Subtype ASC
+
