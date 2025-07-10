@@ -1,0 +1,96 @@
+/* user=vlam reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=wy4lsGwldwqj9MwsM8yhdMdvq89shylMG8yqw9vh */ 
+WITH 
+"Snapshot_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Date0"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    )
+SELECT
+    REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09') AS rack_path, 
+    UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) AS datacenter, 
+    "Location"."LCTN_HIER_SEC_LVL_ID", 
+    "Location"."LCTN_HIER_3RD_LVL_ID", 
+    "Rack"."RACK_POD_NB", 
+    "Rack"."RACK_BW_CAP_CD", 
+    "Rack"."RACK_NETW_PATH_TY_NM", 
+    "Rack"."RACK_GRP_NM", 
+    "Rack"."RACK_TY_NM", 
+    "Rack"."RACK_SUB_TY_NM", 
+    "Rack"."RACK_CAP_STAT_NM", 
+    "Rack"."TOT_SLOT_CAP_QY", 
+    "Rack"."HDW_ID", 
+    "Rack"."RACK_PWR_CAP_KWH_RT", 
+    "Rack"."RACK_UPS_GRP_NB", 
+    "Rack"."RACK_LEASE_NB", 
+    "Rack"."RACK_CAP_PWR_ZN", 
+    "Rack"."RACK_CAP_ROW_NUM", 
+    CASE 
+        WHEN 
+            "Last_Hardware_Note_Employee"."EMPL_USR_NM" IS NULL OR
+            "Last_Hardware_Note"."HDW_INTR_NOTE_TX" IS NULL
+            THEN
+                NULL
+        ELSE "Last_Hardware_Note_Employee"."EMPL_USR_NM" || ' - ' || "Last_Hardware_Note"."HDW_INTR_NOTE_TX"
+    END AS last_hardware_note
+FROM
+    "Snapshot_Calendar"
+        INNER JOIN "EDW2"."HDW_DAILY_SNPSHT_FCT" "Fact___Hardware_Daily_Snapshot"
+        ON "Snapshot_Calendar"."CAL_DT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_SNPSHT_DT_KY"
+            INNER JOIN "EDW2"."HDW_DIM" "Hardware"
+            ON "Hardware"."HDW_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_KY"
+                INNER JOIN "EDW2"."HDW_NOTE_DIM" "Last_Hardware_Note"
+                ON "Last_Hardware_Note"."HDW_NOTE_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_NOTE_KY"
+                    INNER JOIN "EDW2"."HDW_STAT_DIM" "Hardware_Status"
+                    ON "Hardware_Status"."HDW_STAT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_STAT_KY"
+                        INNER JOIN "EDW2"."EMPL_DIM" "Last_Hardware_Note_Employee"
+                        ON "Last_Hardware_Note_Employee"."EMPL_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_NOTE_EMPL_KY"
+                            INNER JOIN "EDW2"."LCTN_DIM" "Location"
+                            ON "Location"."LCTN_KY" = "Fact___Hardware_Daily_Snapshot"."LCTN_KY"
+                                INNER JOIN "EDW2"."RACK_DIM" "Rack"
+                                ON "Rack"."RACK_KY" = "Fact___Hardware_Daily_Snapshot"."RACK_KY" 
+WHERE 
+    "Hardware"."HDW_TY_NM" IN ( 
+        'Rack' ) AND
+    NOT ( REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09') IN ( 
+        'Not Applicable', 
+        'wdc07.sr03.rk80', 
+        'wdc07.sr03.rk81', 
+        'wdc07.sr03.rk82', 
+        'wdc07.sr03.rk83', 
+        'wdc07.sr03.rk100', 
+        'wdc07.sr03.rk101' ) ) AND
+    "Location"."LCTN_HIER_FRST_LVL_NM" IN ( 
+        'datacenter', 
+        'lab' ) AND
+    NOT ( UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) IN ( 
+        'AUS01', 
+        'DAL00', 
+        'DAL02', 
+        'POK01', 
+        'DAL03', 
+        'DAL07' ) ) AND
+    NOT ( "Rack"."HDW_ID" IN ( 
+        -400, 
+        -300, 
+        -200, 
+        -100 ) ) AND
+    NOT ( "Hardware_Status"."HDW_STAT_NM" IN ( 
+        'Admin_Hold', 
+        'Deleted', 
+        'Liquidation- Retired', 
+        'Reallocated', 
+        'Retired' ) ) AND
+    trunc("Snapshot_Calendar"."Date0") = trunc(sysdate, 'DD') - 1 AND
+    "Hardware_Status"."HDW_STAT_GRP_NM" <> 'Liquidation' AND
+    "Hardware"."HDW_DEL_IN" = 'N' AND
+    "Hardware"."FAKE_HDW_IN" = 'N'
+ORDER BY
+    "Location"."DATA_CTR_ID" ASC NULLS LAST,
+    "Location"."LCTN_HIER_SEC_LVL_ID" ASC NULLS LAST, 
+    "Location"."LCTN_HIER_3RD_LVL_ID" ASC NULLS LAST
+    
