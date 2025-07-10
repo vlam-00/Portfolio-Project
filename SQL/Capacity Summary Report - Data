@@ -1,0 +1,261 @@
+/* user=vlam reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=y88MjyCCMww24CyldGsww9CsjyjdCdqqwyvCwyMq */ 
+WITH 
+"Account" AS 
+    (
+    SELECT
+        "ACCT_DIM"."ACCT_TY_NM" AS "IMS_Account_Type", 
+        "ACCT_DIM"."ACCT_KY" AS "ACCT_KY"
+    FROM
+        "EDW2"."BRAND_DIM" "BRAND_DIM"
+            INNER JOIN "EDW2"."ACCT_DIM" "ACCT_DIM"
+            ON "BRAND_DIM"."BRAND_KY" = "ACCT_DIM"."BRAND_KY"
+                INNER JOIN "EDW2"."CTLG_DIM" "CTLG_DIM"
+                ON "BRAND_DIM"."CTLG_KY" = "CTLG_DIM"."CTLG_KY"
+    ), 
+"Snapshot_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Date0"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    )
+SELECT
+    "Snapshot_Calendar"."Date0" AS "Date0", 
+    UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) AS "Datacenter", 
+    "Location"."LCTN_HIER_SEC_LVL_ID" AS "Location_2nd_Level_ID", 
+    "Location"."LCTN_HIER_3RD_LVL_NM" AS "Location_3rd_Level_Name", 
+    "Location"."LCTN_HIER_3RD_LVL_ID" AS "Location_3rdLevel_ID", 
+    CASE 
+        WHEN 
+            "POD"."DATA_CTR_ID" IS NULL OR
+            "POD"."POD_NB" IS NULL
+            THEN
+                NULL
+        ELSE "POD"."DATA_CTR_ID" || ' - ' || "POD"."POD_NB"
+    END AS "POD", 
+    "Account"."IMS_Account_Type" AS "IMS_Account_Type", 
+    "Hardware_Status"."HDW_STAT_NM" AS "Hardware_Status", 
+    "Hardware_Status"."HDW_STAT_GRP_NM" AS "Hardware_Status_Group", 
+    "Hardware"."HDW_TY_NM" AS "Hardware_Type", 
+    CASE 
+        WHEN "Hardware"."HDW_CHAS_SIZE_QY" = 0 THEN 1
+        WHEN "Hardware"."HDW_CHAS_NM" = 'AFFA700' THEN 4
+        ELSE "Hardware"."HDW_CHAS_SIZE_QY"
+    END AS "Chassis_Size", 
+    SUM("Fact___Hardware_Daily_Snapshot"."HDW_CT") AS "Hardware_Count", 
+    SUM(
+        CASE 
+            WHEN 
+                (LOWER(
+                    CASE 
+                        WHEN 
+                            UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) IS NULL OR
+                            "Location"."LCTN_HIER_SEC_LVL_ID" IS NULL
+                            THEN
+                                NULL
+                        ELSE UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) || '.sr' || "Location"."LCTN_HIER_SEC_LVL_ID"
+                    END) IN ( 
+                    'ams03.sr01', 
+                    'dal09.sr01', 
+                    'dal09.sr02', 
+                    'fra02.sr01', 
+                    'fra02.sr02', 
+                    'lon02.sr01', 
+                    'lon02.sr02', 
+                    'mon01.sr01', 
+                    'syd01.sr01', 
+                    'syd01.sr02', 
+                    'tok02.sr01', 
+                    'tok02.sr02', 
+                    'tor01.sr01' ) OR
+                UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) IN ( 
+                    'DAL05', 
+                    'DAL08', 
+                    'SJC01', 
+                    'SNG01', 
+                    'WDC01', 
+                    'WDC03' ) OR
+                UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) = 'PAR01' AND
+                NOT ( REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09') IN ( 
+                    'par01.sr01.rk23', 
+                    'par01.sr01.rk24', 
+                    'par01.sr01.rk25', 
+                    'par01.sr01.rk26', 
+                    'par01.sr01.rk27', 
+                    'par01.sr01.rk28', 
+                    'par01.sr01.rk29', 
+                    'par01.sr01.rk30', 
+                    'par01.sr01.rk31', 
+                    'par01.sr01.rk32', 
+                    'par01.sr01.rk33', 
+                    'par01.sr01.rk133', 
+                    'par01.sr01.rk134', 
+                    'par01.sr01.rk135', 
+                    'par01.sr01.rk136', 
+                    'par01.sr01.rk137', 
+                    'par01.sr01.rk138', 
+                    'par01.sr01.rk139', 
+                    'par01.sr01.rk140', 
+                    'par01.sr01.rk141', 
+                    'par01.sr01.rk142', 
+                    'par01.sr01.rk143', 
+                    'par01.sr01.rk166', 
+                    'par01.sr01.rk167', 
+                    'par01.sr01.rk168', 
+                    'par01.sr01.rk169', 
+                    'par01.sr01.rk170', 
+                    'par01.sr01.rk171', 
+                    'par01.sr01.rk172', 
+                    'par01.sr01.rk173', 
+                    'par01.sr01.rk174', 
+                    'par01.sr01.rk175', 
+                    'par01.sr01.rk176' ) ) OR
+                UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) = 'MIL01' AND
+                NOT ( REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09') IN ( 
+                    'mil01.sr01.rk01', 
+                    'mil01.sr01.rk02', 
+                    'mil01.sr01.rk03', 
+                    'mil01.sr01.rk04', 
+                    'mil01.sr01.rk05', 
+                    'mil01.sr01.rk06', 
+                    'mil01.sr01.rk07', 
+                    'mil01.sr01.rk08', 
+                    'mil01.sr01.rk09', 
+                    'mil01.sr01.rk10', 
+                    'mil01.sr01.rk11', 
+                    'mil01.sr01.rk78', 
+                    'mil01.sr01.rk79', 
+                    'mil01.sr01.rk80', 
+                    'mil01.sr01.rk81', 
+                    'mil01.sr01.rk82', 
+                    'mil01.sr01.rk83', 
+                    'mil01.sr01.rk84', 
+                    'mil01.sr01.rk85', 
+                    'mil01.sr01.rk86', 
+                    'mil01.sr01.rk87', 
+                    'mil01.sr01.rk88' ) )) AND
+                CASE 
+                    WHEN "Hardware"."HDW_CHAS_SIZE_QY" = 0 THEN 1
+                    WHEN "Hardware"."HDW_CHAS_NM" = 'AFFA700' THEN 4
+                    ELSE "Hardware"."HDW_CHAS_SIZE_QY"
+                END = 1 AND
+                "Hardware_Status"."HDW_STAT_GRP_NM" = 'Active'
+                THEN
+                    2 * "Fact___Hardware_Daily_Snapshot"."HDW_CT"
+            ELSE CASE 
+                WHEN "Hardware"."HDW_CHAS_SIZE_QY" = 0 THEN 1
+                WHEN "Hardware"."HDW_CHAS_NM" = 'AFFA700' THEN 4
+                ELSE "Hardware"."HDW_CHAS_SIZE_QY"
+            END * "Fact___Hardware_Daily_Snapshot"."HDW_CT"
+        END) AS "Occupied_U"
+FROM
+    "Account"
+        INNER JOIN "EDW2"."HDW_DAILY_SNPSHT_FCT" "Fact___Hardware_Daily_Snapshot"
+        ON "Account"."ACCT_KY" = "Fact___Hardware_Daily_Snapshot"."ACCT_KY"
+            INNER JOIN "Snapshot_Calendar"
+            ON "Snapshot_Calendar"."CAL_DT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_SNPSHT_DT_KY"
+                INNER JOIN "EDW2"."HDW_DIM" "Hardware"
+                ON "Hardware"."HDW_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_KY"
+                    INNER JOIN "EDW2"."HDW_STAT_DIM" "Hardware_Status"
+                    ON "Hardware_Status"."HDW_STAT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_STAT_KY"
+                        INNER JOIN "EDW2"."LCTN_DIM" "Location"
+                        ON "Location"."LCTN_KY" = "Fact___Hardware_Daily_Snapshot"."LCTN_KY"
+                            INNER JOIN "EDW2"."POD_DIM" "POD"
+                            ON "POD"."POD_KY" = "Fact___Hardware_Daily_Snapshot"."POD_KY"
+                                INNER JOIN "EDW2"."RACK_DIM" "Rack"
+                                ON "Rack"."RACK_KY" = "Fact___Hardware_Daily_Snapshot"."RACK_KY" 
+WHERE 
+    "Location"."LCTN_HIER_FRST_LVL_NM" IN ( 
+        'datacenter', 
+        'lab' ) AND
+    "Location"."LCTN_HIER_SEC_LVL_NM" IN ( 
+        'server room' ) AND
+    "Hardware"."HDW_TY_NM" IN ( 
+        'Console', 
+        'Enclosure', 
+        'Firewall', 
+        'IPMI Management Switch', 
+        'IPS Device', 
+        'KVM', 
+        'Line Card', 
+        'Load Balancer', 
+        'Network Address Translation', 
+        'Network Load Tester', 
+        'Optical System', 
+        'Protection', 
+        'SAN Filer', 
+        'SAN Network', 
+        'SAN Storage', 
+        'SAN Switch', 
+        'Security Module', 
+        'Server', 
+        'Storage Enclosure', 
+        'Storage Shelf', 
+        'Switch', 
+        'Virtual Server', 
+        'Router', 
+        'Mass Data Migration Service device', 
+        'NAS Backup', 
+        'VPN Router' ) AND
+    NOT ( "Location"."LCTN_HIER_4TH_LVL_ID" IN ( 
+        'g', 
+        'h', 
+        'i', 
+        'j', 
+        'k' ) ) AND
+    NOT ( UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)) IN ( 
+        'AUS01', 
+        'DAL00', 
+        'DAL02', 
+        'POK01', 
+        'DAL03' ) ) AND
+    NOT ( "Hardware_Status"."HDW_STAT_NM" IN ( 
+        'Admin_Hold', 
+        'Offsite_Transfer', 
+        'Reallocated', 
+        'Retired', 
+        'Returned_To_Customer' ) ) AND
+    NOT ( LOWER("Hardware"."HDW_CHAS_NM") LIKE '%partition%' ) AND
+    trunc("Snapshot_Calendar"."Date0") = trunc(sysdate, 'DD') - 1 AND
+    "Hardware_Status"."HDW_STAT_GRP_NM" <> 'Liquidation' AND
+    "Hardware"."HDW_DEL_IN" = 'N' AND
+    "Hardware"."FAKE_HDW_IN" = 'N' 
+GROUP BY 
+    "Snapshot_Calendar"."Date0", 
+    UPPER(REGEXP_SUBSTR(REPLACE("Rack"."RACK_PATH_NM", 'lablab98', 'dal09'),'([^\.]+)',1,1)), 
+    "Location"."LCTN_HIER_SEC_LVL_ID", 
+    "Location"."LCTN_HIER_3RD_LVL_NM", 
+    "Location"."LCTN_HIER_3RD_LVL_ID", 
+    CASE 
+        WHEN 
+            "POD"."DATA_CTR_ID" IS NULL OR
+            "POD"."POD_NB" IS NULL
+            THEN
+                NULL
+        ELSE "POD"."DATA_CTR_ID" || ' - ' || "POD"."POD_NB"
+    END, 
+    "Account"."IMS_Account_Type", 
+    "Hardware_Status"."HDW_STAT_NM", 
+    "Hardware_Status"."HDW_STAT_GRP_NM", 
+    "Hardware"."HDW_TY_NM", 
+    CASE 
+        WHEN "Hardware"."HDW_CHAS_SIZE_QY" = 0 THEN 1
+        WHEN "Hardware"."HDW_CHAS_NM" = 'AFFA700' THEN 4
+        ELSE "Hardware"."HDW_CHAS_SIZE_QY"
+    END 
+ORDER BY 
+    "Location_2nd_Level_ID" ASC NULLS LAST, 
+    "Location_3rdLevel_ID" ASC NULLS LAST, 
+    "Datacenter" ASC NULLS LAST, 
+    "POD" ASC NULLS LAST, 
+    "IMS_Account_Type" ASC NULLS LAST, 
+    "Hardware_Status" ASC NULLS LAST, 
+    "Hardware_Status_Group" ASC NULLS LAST, 
+    "Hardware_Type" ASC NULLS LAST, 
+    "Date0" ASC NULLS LAST, 
+    "Location_3rd_Level_Name" ASC NULLS LAST, 
+    "Chassis_Size" ASC NULLS LAST
+
