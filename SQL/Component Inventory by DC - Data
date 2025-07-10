@@ -1,0 +1,252 @@
+/* user=vlam reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=G2vdGqqvllMjsC4CsGddCG8vM4GwhMhq8jGvMjdM */ 
+SELECT
+    to_char("Fact___Component"."LAST_REFRESH", 'MM/DD/YYYY') AS "Date0", 
+    "Fact___Component"."LAST_REFRESH" AS "Last_Refresh", 
+    to_char(SYSDATE, 'MM/DD/YYYY HH:MI:SS AM') AS "Data_Run", 
+    "Location"."DATA_CTR_ID" AS "Datacenter", 
+    CASE 
+        WHEN 
+            "Location"."MACRO_GEOG_RGN_NM" IN ( 
+                'Oceania', 
+                'Asia' )
+            THEN
+                'APAC'
+        WHEN "Location"."MACRO_GEOG_RGN_NM" = 'Europe' THEN 'EMEA'
+        WHEN "Location"."MACRO_GEOG_RGN_NM" = 'Americas' THEN 'NASA'
+        ELSE 'NO GEO'
+    END AS "Geography", 
+    CASE 
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'DAL10', 
+                'DAL12', 
+                'DAL13', 
+                'DAL14' )
+            THEN
+                'DAL MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'FRA02', 
+                'FRA04', 
+                'FRA05' )
+            THEN
+                'FRA MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'LON04', 
+                'LON05', 
+                'LON06' )
+            THEN
+                'LON MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'MAD02', 
+                'MAD04', 
+                'MAD05' )
+            THEN
+                'MAD MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'OSA21', 
+                'OSA22', 
+                'OSA23' )
+            THEN
+                'OSA MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'PAR04', 
+                'PAR05', 
+                'PAR06' )
+            THEN
+                'PAR MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'SAO01', 
+                'SAO04', 
+                'SAO05' )
+            THEN
+                'SAO MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'SYD01', 
+                'SYD04', 
+                'SYD05' )
+            THEN
+                'SYD MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'TOK02', 
+                'TOK04', 
+                'TOK05' )
+            THEN
+                'TOK MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'TOR01', 
+                'TOR04', 
+                'TOR05' )
+            THEN
+                'TOR MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'WDC04', 
+                'WDC06', 
+                'WDC07' )
+            THEN
+                'WDC MZR'
+        ELSE 'SZR'
+    END AS "Region", 
+    "Component_Model"."COMPONENT_TYPE" AS "Component_Type", 
+    "MV_CMP_STATUS0"."CMP_STATUS" AS "Component_Status", 
+    "Component_Model"."GEN_CMP_MODEL_ID" AS "Generic_Component_Model_ID", 
+    "Component_Model"."CMP_GEN_MODEL_DESCRIPTION" AS "Generic_Component_Model_Description", 
+    "Component_Model"."CMP_MODEL_VENDOR" AS "Component_Model_Vendor", 
+    "Component_Model"."CMP_MODEL_NAME" AS "Component_Model_Name", 
+    "Component_Model"."CMP_MODEL_VERSION" AS "Component_Model_Version", 
+    "Component_Model"."CMP_MODEL_DESCRIPTION" AS "Component_Model_Description", 
+    "Component_Model"."CMP_CAPACITY" AS "Component_Capacity", 
+    COUNT(DISTINCT "Fact___Component"."COMPONENT_ID") AS "Component_Count", 
+    "MV_HARDWARE_STATUS"."STATUS" AS "Hardware_Status"
+FROM
+    "COGNOS_USER"."MV_CMP_MODEL" "Component_Model"
+        INNER JOIN "COGNOS_USER"."MV_HW_COMPONENT_FACT" "Fact___Component"
+        ON "Component_Model"."CMP_MODEL_ID" = "Fact___Component"."CMP_MODEL_ID"
+            INNER JOIN "COGNOS_USER"."MV_CMP_STATUS" "MV_CMP_STATUS0"
+            ON "Fact___Component"."HW_COMPONENT_STATUS_ID" = "MV_CMP_STATUS0"."CMP_STATUS_ID"
+                INNER JOIN "EDW2"."LCTN_DIM" "Location"
+                ON 
+                    "Location"."LCTN_ID" = "Fact___Component"."LOCATION_ID" AND
+                    "Location"."SRC_SYS_CD" = 'IMS'
+                    LEFT OUTER JOIN 
+                    "COGNOS_USER"."MV_HW_STATUS" "MV_HARDWARE_STATUS"
+                        INNER JOIN "COGNOS_USER"."MV_HW_FACT" "MV_HW_FACT0"
+                        ON "MV_HARDWARE_STATUS"."HARDWARE_STATUS_ID" = "MV_HW_FACT0"."HARDWARE_STATUS_ID"
+                    ON "MV_HW_FACT0"."HARDWARE_ID" = "Fact___Component"."HARDWARE_ID" 
+WHERE 
+    "MV_CMP_STATUS0"."CMP_STATUS" IN ( 
+        'Installed', 
+        'Inventory', 
+        'Planned' ) AND
+    "Component_Model"."COMPONENT_TYPE" IN ( 
+        'Drive Controller', 
+        'GPU', 
+        'Hard Drive', 
+        'Module', 
+        'Network Card', 
+        'Processor', 
+        'RAM' ) AND
+    ("MV_HARDWARE_STATUS"."STATUS" IN ( 
+        'Capacity_Limitation', 
+        'Firmware_Wait', 
+        'Inventory', 
+        'Macwait', 
+        'Missing_Parts' ) OR
+    "MV_HARDWARE_STATUS"."STATUS" IS NULL) 
+GROUP BY 
+    to_char("Fact___Component"."LAST_REFRESH", 'MM/DD/YYYY'), 
+    "Fact___Component"."LAST_REFRESH", 
+    to_char(SYSDATE, 'MM/DD/YYYY HH:MI:SS AM'), 
+    "Location"."DATA_CTR_ID", 
+    CASE 
+        WHEN 
+            "Location"."MACRO_GEOG_RGN_NM" IN ( 
+                'Oceania', 
+                'Asia' )
+            THEN
+                'APAC'
+        WHEN "Location"."MACRO_GEOG_RGN_NM" = 'Europe' THEN 'EMEA'
+        WHEN "Location"."MACRO_GEOG_RGN_NM" = 'Americas' THEN 'NASA'
+        ELSE 'NO GEO'
+    END, 
+    CASE 
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'DAL10', 
+                'DAL12', 
+                'DAL13', 
+                'DAL14' )
+            THEN
+                'DAL MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'FRA02', 
+                'FRA04', 
+                'FRA05' )
+            THEN
+                'FRA MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'LON04', 
+                'LON05', 
+                'LON06' )
+            THEN
+                'LON MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'MAD02', 
+                'MAD04', 
+                'MAD05' )
+            THEN
+                'MAD MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'OSA21', 
+                'OSA22', 
+                'OSA23' )
+            THEN
+                'OSA MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'PAR04', 
+                'PAR05', 
+                'PAR06' )
+            THEN
+                'PAR MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'SAO01', 
+                'SAO04', 
+                'SAO05' )
+            THEN
+                'SAO MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'SYD01', 
+                'SYD04', 
+                'SYD05' )
+            THEN
+                'SYD MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'TOK02', 
+                'TOK04', 
+                'TOK05' )
+            THEN
+                'TOK MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'TOR01', 
+                'TOR04', 
+                'TOR05' )
+            THEN
+                'TOR MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'WDC04', 
+                'WDC06', 
+                'WDC07' )
+            THEN
+                'WDC MZR'
+        ELSE 'SZR'
+    END, 
+    "Component_Model"."COMPONENT_TYPE", 
+    "MV_CMP_STATUS0"."CMP_STATUS", 
+    "Component_Model"."GEN_CMP_MODEL_ID", 
+    "Component_Model"."CMP_GEN_MODEL_DESCRIPTION", 
+    "Component_Model"."CMP_MODEL_VENDOR", 
+    "Component_Model"."CMP_MODEL_NAME", 
+    "Component_Model"."CMP_MODEL_VERSION", 
+    "Component_Model"."CMP_MODEL_DESCRIPTION", 
+    "Component_Model"."CMP_CAPACITY", 
+    "MV_HARDWARE_STATUS"."STATUS"
+
