@@ -1,4 +1,4 @@
-/* user=VINCENT LAM reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=48Mhw9MwlGCywd4hlvwwCvdv24vdqs9vhvMydCw2 */ 
+/* user=vlam reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=48Mhw9MwlGCywd4hlvwwCvdv24vdqs9vhvMydCw2 */ 
 WITH 
 "Account" AS 
     (
