@@ -1,0 +1,457 @@
+/* user=vlam reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=q2yhdGM9l4G4s22sqdd8wwv8ysvCh4vvjC988h4d */ 
+WITH 
+"Account" AS 
+    (
+    SELECT
+        "ACCT_DIM"."ACCT_ID" AS "IMS_Account_ID", 
+        CASE 
+            WHEN "ACCT_DIM"."GDPR_IN" = 'Y' THEN 'REDACTED'
+            ELSE "ACCT_DIM"."ACCT_LONG_NM"
+        END AS "Account_Name", 
+        CASE 
+            WHEN 
+                
+                    CASE 
+                        WHEN "ACCT_DIM"."VAR_ACCT_ID" > 0 THEN "ACCT_DIM"."VAR_NM"
+                        WHEN "ACCT_DIM"."CHAN_ACCT_ID" > 0 THEN "ACCT_DIM"."CHAN_NM"
+                        ELSE "ACCT_DIM"."ORG_UNIT_NM"
+                    END LIKE '%Kyndryl%'
+                THEN
+                    'Kyndryl'
+            ELSE "ACCT_DIM"."IBM_ACCT_CLASS_NM"
+        END AS "IBM_Account_Class", 
+        "ACCT_DIM"."ACCT_TY_NM" AS "IMS_Account_Type", 
+        "ACCT_DIM"."ACCT_KY" AS "ACCT_KY", 
+        "ACCT_DIM"."GDPR_IN" AS "GDPR_Indicator", 
+        "ACCT_DIM"."ACCT_SUPT_CLASS_NM" AS "Account_Support_Class", 
+        'Y' AS "PI"
+    FROM
+        "EDW2"."BRAND_DIM" "BRAND_DIM"
+            INNER JOIN "EDW2"."ACCT_DIM" "ACCT_DIM"
+            ON "BRAND_DIM"."BRAND_KY" = "ACCT_DIM"."BRAND_KY"
+                INNER JOIN "EDW2"."CTLG_DIM" "CTLG_DIM"
+                ON "BRAND_DIM"."CTLG_KY" = "CTLG_DIM"."CTLG_KY"
+    )
+SELECT
+    "Invoice_Calendar__Service_Invoicing_"."MTH_KY" AS Year_and_Month, 
+    TRUNC(cast("Invoice_Calendar__Service_Invoicing_"."CAL_DT" as DATE)) AS Date0, 
+    to_char(SYSDATE, 'MM/DD/YYYY HH:MI:SS AM') AS Data_Run, 
+    "Account"."Account_Name" AS Account_Name, 
+    "Account"."IMS_Account_ID" AS IMS_Account_ID, 
+    "Account"."IMS_Account_Type" AS IMS_Account_Type, 
+    "Account"."IBM_Account_Class" AS IBM_Account_Class, 
+    "Account"."Account_Support_Class" AS Account_Support_Class, 
+    CASE 
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'DAL01', 
+                'DAL05', 
+                'DAL06', 
+                'DAL07', 
+                'DAL08', 
+                'DAL09', 
+                'DAL10', 
+                'DAL12', 
+                'DAL13', 
+                'DAL14', 
+                'HOU02', 
+                'MEX01', 
+                'MON01', 
+                'MON04', 
+                'POK01', 
+                'SAO01', 
+                'SAO04', 
+                'SAO05', 
+                'SEA01', 
+                'SJC01', 
+                'SJC03', 
+                'SJC04', 
+                'TOR01', 
+                'TOR04', 
+                'TOR05', 
+                'WDC01', 
+                'WDC03', 
+                'WDC04', 
+                'WDC06', 
+                'WDC07', 
+                'TOR04', 
+                'TOR05' )
+            THEN
+                'NASA'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'CHE01', 
+                'HKG02', 
+                'MEL01', 
+                'SEO01', 
+                'SNG01', 
+                'SYD01', 
+                'SYD04', 
+                'SYD05', 
+                'TOK02', 
+                'TOK04', 
+                'TOK05', 
+                'OSA21', 
+                'OSA22', 
+                'OSA23' )
+            THEN
+                'APAC'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'AMS01', 
+                'AMS03', 
+                'FRA02', 
+                'FRA04', 
+                'FRA05', 
+                'LON01', 
+                'LON02', 
+                'LON04', 
+                'LON05', 
+                'LON06', 
+                'MAD02', 
+                'MAD04', 
+                'MAD05', 
+                'MIL01', 
+                'OSL01', 
+                'PAR01', 
+                'PAR04', 
+                'PAR05', 
+                'PAR06' )
+            THEN
+                'EMEA'
+        ELSE ''
+    END AS GEO, 
+    CASE 
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'DAL10', 
+                'DAL12', 
+                'DAL13', 
+                'DAL14' )
+            THEN
+                'DAL MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'FRA02', 
+                'FRA04', 
+                'FRA05' )
+            THEN
+                'FRA MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'LON04', 
+                'LON05', 
+                'LON06' )
+            THEN
+                'LON MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'MAD02', 
+                'MAD04', 
+                'MAD05' )
+            THEN
+                'MAD MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'OSA21', 
+                'OSA22', 
+                'OSA23' )
+            THEN
+                'OSA MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'PAR04', 
+                'PAR05', 
+                'PAR06' )
+            THEN
+                'PAR MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'SAO01', 
+                'SAO04', 
+                'SAO05' )
+            THEN
+                'SAO MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'SYD01', 
+                'SYD04', 
+                'SYD05' )
+            THEN
+                'SYD MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'TOK02', 
+                'TOK04', 
+                'TOK05' )
+            THEN
+                'TOK MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'TOR01', 
+                'TOR04', 
+                'TOR05' )
+            THEN
+                'TOR MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'WDC04', 
+                'WDC06', 
+                'WDC07' )
+            THEN
+                'WDC MZR'
+        ELSE 'SZR'
+    END AS Region,
+    "Location"."DATA_CTR_GRP_ID" AS DC,  
+    CASE "Product_Line_Category"."PROD_LINE_NM"
+        WHEN 'Dedicated' THEN 'Bare Metal'
+        WHEN 'Cloud' THEN 'Virtual Server'
+        ELSE "Product_Line_Category"."PROD_LINE_NM"
+    END AS Product_Line, 
+    "Product_Package"."PROD_PKG_NM" AS Product_Package, 
+    COUNT(DISTINCT 
+        CASE 
+            WHEN "Fact___Invoice"."GUEST_KY" > 0 THEN "Fact___Invoice"."GUEST_KY" || "Fact___Invoice"."INVC_SRC_SYS_CD"
+        END) AS VSI_Count
+/*
+    CASE 
+        WHEN "Fact___Invoice"."GUEST_KY" > 0
+            THEN
+                CASE 
+                    WHEN 
+                        "Fact___Invoice"."GUEST_KY" IS NULL OR
+                        "Fact___Invoice"."INVC_SRC_SYS_CD" IS NULL
+                        THEN
+                            NULL
+                    ELSE "Fact___Invoice"."GUEST_KY" || "Fact___Invoice"."INVC_SRC_SYS_CD"
+                END
+    END AS VSI_Count
+*/
+FROM
+    "Account"
+        INNER JOIN "EDW2"."INVC_ITEM_FCT" "Fact___Invoice"
+        ON "Account"."ACCT_KY" = "Fact___Invoice"."SVCE_ACCT_KY"
+            INNER JOIN "EDW2"."CAL_DT_DIM" "Invoice_Calendar__Service_Invoicing_"
+            ON 
+                "Invoice_Calendar__Service_Invoicing_"."CAL_DT_KY" = "Fact___Invoice"."SVCE_INVC_DT_KY" AND
+                ("Invoice_Calendar__Service_Invoicing_"."CAL_DT_KY" <= "Fact___Invoice"."BILL_TO_INVC_DT_KY" OR
+                "Fact___Invoice"."BILL_TO_INVC_DT_KY" < 0)
+                INNER JOIN "EDW2"."INVC_CHRST_DIM" "Invoice_Characteristics"
+                ON "Invoice_Characteristics"."INVC_CHRST_KY" = "Fact___Invoice"."SVCE_INVC_CHRST_KY"
+                    INNER JOIN "EDW2"."DATA_CTR_DIM" "Location"
+                    ON "Location"."DATA_CTR_KY" = "Fact___Invoice"."DATA_CTR_KY"
+                        INNER JOIN "EDW2"."PROD_ASSY_DIM" "Product_Line_Category"
+                        ON "Product_Line_Category"."PROD_ASSY_KY" = "Fact___Invoice"."PROD_ASSY_KY"
+                            INNER JOIN "EDW2"."PROD_PKG_DIM" "Product_Package"
+                            ON "Product_Package"."PROD_PKG_KY" = "Fact___Invoice"."PROD_PKG_KY"
+                                INNER JOIN "EDW2"."SRC_SYS_DIM" "Source_System"
+                                ON "Source_System"."SRC_SYS_CD" = "Fact___Invoice"."INVC_SRC_SYS_CD" 
+WHERE 
+    "Invoice_Calendar__Service_Invoicing_"."MTH_KY" = '202505' AND
+    NOT ( "Location"."DATA_CTR_GRP_ID" IN ( 
+        'Unknown', 
+        'Not Applicable', 
+        'DAL00', 
+        'DAL01', 
+        'DAL05', 
+        'HOU02', 
+        'MEX01', 
+        'OSL01', 
+        'SEA01' ) ) AND
+    "Source_System"."SRC_SYS_NM" IN ( 
+        'IMS', 
+        'GOV' ) AND
+    NOT ( "Invoice_Characteristics"."INVC_CHG_TY_NM" IN ( 
+        'Tax' ) )
+GROUP BY 
+    "Invoice_Calendar__Service_Invoicing_"."MTH_KY", 
+    CAST("Invoice_Calendar__Service_Invoicing_"."CAL_DT" AS DATE), 
+    to_char(SYSDATE, 'MM/DD/YYYY HH:MI:SS AM'), 
+    "Account"."Account_Name", 
+    "Account"."IMS_Account_ID", 
+    "Account"."IMS_Account_Type", 
+    "Account"."IBM_Account_Class", 
+    "Account"."Account_Support_Class", 
+    CASE 
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'DAL01', 
+                'DAL05', 
+                'DAL06', 
+                'DAL07', 
+                'DAL08', 
+                'DAL09', 
+                'DAL10', 
+                'DAL12', 
+                'DAL13', 
+                'DAL14', 
+                'HOU02', 
+                'MEX01', 
+                'MON01', 
+                'MON04', 
+                'POK01', 
+                'SAO01', 
+                'SAO04', 
+                'SAO05', 
+                'SEA01', 
+                'SJC01', 
+                'SJC03', 
+                'SJC04', 
+                'TOR01', 
+                'TOR04', 
+                'TOR05', 
+                'WDC01', 
+                'WDC03', 
+                'WDC04', 
+                'WDC06', 
+                'WDC07', 
+                'TOR04', 
+                'TOR05' )
+            THEN
+                'NASA'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'CHE01', 
+                'HKG02', 
+                'MEL01', 
+                'SEO01', 
+                'SNG01', 
+                'SYD01', 
+                'SYD04', 
+                'SYD05', 
+                'TOK02', 
+                'TOK04', 
+                'TOK05', 
+                'OSA21', 
+                'OSA22', 
+                'OSA23' )
+            THEN
+                'APAC'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'AMS01', 
+                'AMS03', 
+                'FRA02', 
+                'FRA04', 
+                'FRA05', 
+                'LON01', 
+                'LON02', 
+                'LON04', 
+                'LON05', 
+                'LON06', 
+                'MAD02', 
+                'MAD04', 
+                'MAD05', 
+                'MIL01', 
+                'OSL01', 
+                'PAR01', 
+                'PAR04', 
+                'PAR05', 
+                'PAR06' )
+            THEN
+                'EMEA'
+        ELSE ''
+    END, 
+    CASE 
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'DAL10', 
+                'DAL12', 
+                'DAL13', 
+                'DAL14' )
+            THEN
+                'DAL MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'FRA02', 
+                'FRA04', 
+                'FRA05' )
+            THEN
+                'FRA MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'LON04', 
+                'LON05', 
+                'LON06' )
+            THEN
+                'LON MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'MAD02', 
+                'MAD04', 
+                'MAD05' )
+            THEN
+                'MAD MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'OSA21', 
+                'OSA22', 
+                'OSA23' )
+            THEN
+                'OSA MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'PAR04', 
+                'PAR05', 
+                'PAR06' )
+            THEN
+                'PAR MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'SAO01', 
+                'SAO04', 
+                'SAO05' )
+            THEN
+                'SAO MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'SYD01', 
+                'SYD04', 
+                'SYD05' )
+            THEN
+                'SYD MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'TOK02', 
+                'TOK04', 
+                'TOK05' )
+            THEN
+                'TOK MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'TOR01', 
+                'TOR04', 
+                'TOR05' )
+            THEN
+                'TOR MZR'
+        WHEN 
+            "Location"."DATA_CTR_GRP_ID" IN ( 
+                'WDC04', 
+                'WDC06', 
+                'WDC07' )
+            THEN
+                'WDC MZR'
+        ELSE 'SZR'
+    END, 
+    "Location"."DATA_CTR_GRP_ID", 
+    CASE "Product_Line_Category"."PROD_LINE_NM"
+        WHEN 'Dedicated' THEN 'Bare Metal'
+        WHEN 'Cloud' THEN 'Virtual Server'
+        ELSE "Product_Line_Category"."PROD_LINE_NM"
+    END, 
+    "Product_Package"."PROD_PKG_NM" 
+ORDER BY 
+    Year_and_Month ASC, 
+    Date0 ASC, 
+    Data_Run ASC, 
+    Account_Name ASC, 
+    IMS_Account_ID ASC, 
+    IMS_Account_Type ASC, 
+    IBM_Account_Class ASC, 
+    Account_Support_Class ASC, 
+    GEO ASC, 
+    Region ASC, 
+    DC ASC, 
+    Product_Line ASC, 
+    Product_Package ASC
+
