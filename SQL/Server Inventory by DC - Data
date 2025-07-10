@@ -1,0 +1,244 @@
+/* user=vlam reportPath= queryName=Query1 REMOTE_ADDR= SERVER_NAME=epmssprod-gslb.limited-use.ibm.com requestID=v2vl4448l2d8v8d9CG8vyMCMlvC8yMC9ydCGvldd */ 
+WITH 
+"Snapshot_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Date0"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    ), 
+"Hardware_Lease_Business" AS 
+    (
+    SELECT
+        "HDW_LEASE_DIM"."HDW_LEASE_ID" AS "Hardware_Lease_ID", 
+        "HDW_LEASE_DIM"."PO_NB" AS "PO_Number", 
+        "HDW_LEASE_DIM"."IBM_PO_NB" AS "IBM_PO_Number", 
+        "HDW_LEASE_DIM"."LEASE_ORDER_FLAG" AS "Lease_Order_Flag", 
+        "HDW_LEASE_DIM"."HDW_LEASE_KY" AS "HDW_LEASE_KY"
+    FROM
+        "EDW2"."HDW_LEASE_DIM" "HDW_LEASE_DIM"
+            INNER JOIN "EDW2"."CURR_DIM" "CURR_DIM"
+            ON "HDW_LEASE_DIM"."CURR_KY" = "CURR_DIM"."CURR_KY"
+    ), 
+"Hardware_Status_Calendar" AS 
+    (
+    SELECT
+        "CAL_DT_DIM"."CAL_DT_KY" AS "CAL_DT_KY", 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) AS "Status_Date"
+    FROM
+        "EDW2"."CAL_DT_DIM" "CAL_DT_DIM" 
+    WHERE 
+        TRUNC(cast("CAL_DT_DIM"."CAL_DT" as DATE)) <= TRUNC(CURRENT_DATE)
+    )
+SELECT
+    "Snapshot_Calendar"."Date0", 
+    timestamp '2025-01-27 23:59:59' AS "Data_Last_Updated", --Update manually
+    to_char(sysdate, 'MM/DD/YYYY HH:MI:SS AM') AS Data_Run, 
+    "Location"."DATA_CTR_ID", 
+    "Location"."LCTN_HIER_SEC_LVL_ID", 
+    "Location"."LCTN_HIER_3RD_LVL_ID", 
+    CASE 
+        WHEN 
+            "Location"."MACRO_GEOG_RGN_NM" IN ( 
+                'Oceania', 
+                'Asia' )
+            THEN
+                'APAC'
+        WHEN "Location"."MACRO_GEOG_RGN_NM" = 'Europe' THEN 'EMEA'
+        WHEN "Location"."MACRO_GEOG_RGN_NM" = 'Americas' THEN 'NASA'
+        ELSE 'NO GEO'
+    END AS "Geography", 
+    CASE 
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'DAL10', 
+                'DAL12', 
+                'DAL13', 
+                'DAL14' )
+            THEN
+                'DAL MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'FRA02', 
+                'FRA04', 
+                'FRA05' )
+            THEN
+                'FRA MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'LON04', 
+                'LON05', 
+                'LON06' )
+            THEN
+                'LON MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'MAD02', 
+                'MAD04', 
+                'MAD05' )
+            THEN
+                'MAD MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'OSA21', 
+                'OSA22', 
+                'OSA23' )
+            THEN
+                'OSA MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'PAR04', 
+                'PAR05', 
+                'PAR06' )
+            THEN
+                'PAR MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'SAO01', 
+                'SAO04', 
+                'SAO05' )
+            THEN
+                'SAO MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'SYD01', 
+                'SYD04', 
+                'SYD05' )
+            THEN
+                'SYD MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'TOK02', 
+                'TOK04', 
+                'TOK05' )
+            THEN
+                'TOK MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'TOR01', 
+                'TOR04', 
+                'TOR05' )
+            THEN
+                'TOR MZR'
+        WHEN 
+            "Location"."DATA_CTR_ID" IN ( 
+                'WDC04', 
+                'WDC06', 
+                'WDC07' )
+            THEN
+                'WDC MZR'
+        ELSE 'SZR'
+    END AS "Region", 
+    "Hardware_Status"."HDW_STAT_NM", 
+    (TRUNC( CAST( "Snapshot_Calendar"."Date0" AS TIMESTAMP ) ) - TRUNC( CAST( "Hardware_Status_Calendar"."Status_Date" AS TIMESTAMP ) )) AS "hw_stat_duration", 
+    "Hardware_Pool"."HDW_POOL_NM", 
+    "Hardware"."MTHBD_MOD_NM", 
+    "Hardware"."HDW_CHAS_VEND_NM", 
+    "Hardware"."HDW_CHAS_VER_CD", 
+    "Hardware"."HDW_CHAS_SIZE_QY", 
+    "Hardware"."PRCSR_CD", 
+    "Hardware"."PRCSR_VER_CD", 
+    "Hardware_Config"."RAM_CAP_QY", 
+    "Hardware_Config"."DRIVE_CNTLR_SPEC_DE", 
+    "Hardware"."HDW_ID", 
+    "Hardware"."SL_SER_NB", 
+    "Hardware"."PRCSR_CT" * "Hardware"."PHYS_CORE_CT" AS "total_phys_cores", 
+/*    CAST(TO_CHAR("Hardware"."PRCSR_CT",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(1)) AS "proc_ct", 
+    '1U-10D ' || CAST(TO_CHAR("Hardware"."PRCSR_CT",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(1)) || 'x' AS "?", 
+    CAST(TO_CHAR("Hardware"."HDW_CHAS_SIZE_QY",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(4)) AS "chassis_size", 
+*/
+    CAST(TO_CHAR("Hardware"."HDW_CHAS_SIZE_QY",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(4)) || 'U ' || CAST(TO_CHAR("Hardware"."PRCSR_CT",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(1)) || 'x' ||"Hardware"."PRCSR_CD" || "Hardware"."PRCSR_VER_CD" AS "sku", 
+    CASE 
+        WHEN 
+            "Hardware"."MTHBD_MOD_NM" = 'SR630' AND
+            "Hardware"."HDW_CHAS_VER_CD" = '1U \ 10D'
+            THEN
+                CASE 
+                    WHEN "Hardware"."MTHBD_MOD_NM" IS NULL THEN NULL
+                    ELSE '1U-10D ' || "Hardware"."MTHBD_MOD_NM"
+                END
+        ELSE 
+            
+            CASE 
+                WHEN 
+                    CAST(TO_CHAR("Hardware"."HDW_CHAS_SIZE_QY",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(4)) IS NULL OR
+                    "Hardware"."MTHBD_MOD_NM" IS NULL
+                    THEN
+                        NULL
+                ELSE CAST(TO_CHAR("Hardware"."HDW_CHAS_SIZE_QY",'TM9','NLS_NUMERIC_CHARACTERS = ''.,'' ')  AS VARCHAR2(4)) || 'U ' || "Hardware"."MTHBD_MOD_NM"
+            END
+    END AS "sku - mb", 
+    CASE 
+        WHEN 
+            "Hardware_Lease_Business"."PO_Number" LIKE '%VPC%' OR
+            "Hardware_Lease_Business"."PO_Number" LIKE '% NG%' OR
+            "Hardware_Lease_Business"."PO_Number" LIKE '%NG2%' OR
+            "Hardware_Lease_Business"."PO_Number" LIKE '%NextGen%'
+            THEN
+                'NG'
+        ELSE 'Classic'
+    END AS "offering_type", 
+    "Last_Hardware_Note"."HDW_INTR_NOTE_TX", 
+    "Hardware_Lease_Business"."Hardware_Lease_ID", 
+    "Hardware_Lease_Business"."PO_Number", 
+    "Hardware_Lease_Business"."IBM_PO_Number", 
+    "Hardware_Lease_Business"."Lease_Order_Flag", 
+    "Fact___Hardware_Daily_Snapshot"."HDW_CT"
+FROM
+    "Snapshot_Calendar"
+        INNER JOIN "EDW2"."HDW_DAILY_SNPSHT_FCT" "Fact___Hardware_Daily_Snapshot"
+        ON "Snapshot_Calendar"."CAL_DT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_SNPSHT_DT_KY"
+            INNER JOIN "EDW2"."HDW_DIM" "Hardware"
+            ON "Hardware"."HDW_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_KY"
+                INNER JOIN "EDW2"."HDW_CMPNT_CONFIG_DIM" "Hardware_Config"
+                ON "Hardware_Config"."HDW_CMPNT_CONFIG_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_CMPNT_CONFIG_KY"
+                    INNER JOIN "Hardware_Lease_Business"
+                    ON "Hardware_Lease_Business"."HDW_LEASE_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_LEASE_KY"
+                        INNER JOIN "EDW2"."HDW_NOTE_DIM" "Last_Hardware_Note"
+                        ON "Last_Hardware_Note"."HDW_NOTE_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_NOTE_KY"
+                            INNER JOIN "EDW2"."HDW_POOL_DIM" "Hardware_Pool"
+                            ON "Hardware_Pool"."HDW_POOL_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_POOL_KY"
+                                INNER JOIN "EDW2"."HDW_STAT_DIM" "Hardware_Status"
+                                ON "Hardware_Status"."HDW_STAT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_STAT_KY"
+                                    INNER JOIN "Hardware_Status_Calendar"
+                                    ON "Hardware_Status_Calendar"."CAL_DT_KY" = "Fact___Hardware_Daily_Snapshot"."HDW_STAT_DT_KY"
+                                        INNER JOIN "EDW2"."LCTN_DIM" "Location"
+                                        ON "Location"."LCTN_KY" = "Fact___Hardware_Daily_Snapshot"."LCTN_KY"
+                                            INNER JOIN "EDW2"."SRC_SYS_DIM" "Source_System"
+                                            ON "Source_System"."SRC_SYS_CD" = "Fact___Hardware_Daily_Snapshot"."SRC_SYS_CD" 
+WHERE 
+    "Source_System"."SRC_SYS_NM" IN ( 
+        'GOV' ) AND
+    "Hardware_Status"."HDW_STAT_NM" IN ( 
+        'Capacity_Limitation', 
+        'Firmware_Wait', 
+        'Inventory', 
+        'Liquidation', 
+        'Macwait', 
+        'Planned', 
+        'Reserved', 
+        'Spare' ) AND
+    NOT ( LOWER("Hardware"."HDW_CHAS_NM") LIKE '%''compute sled'', ''poweredge''%' ) AND
+    NOT ( "Hardware"."MTHBD_MOD_NM" IN ( 
+        '00NH4P', 
+        '0M332H', 
+        '2S4U-2CD4', 
+        '72T6D', 
+        '9550', 
+        '9650', 
+        'GenesisSystemx3550-M5-Skylake', 
+        'P8DTU', 
+        'SP012GMR', 
+        'T21P-4U', 
+        'Unknown' ) ) AND
+    "Location"."LCTN_HIER_FRST_LVL_NM" IN ( 
+        'datacenter' ) AND
+    trunc("Snapshot_Calendar"."Date0") = trunc(sysdate, 'DD') - 1 AND
+    "Hardware_Status"."HDW_STAT_GRP_NM" <> 'Liquidation' AND
+    "Hardware"."HDW_TY_NM" = 'Server' AND
+    "Hardware"."HDW_DEL_IN" = 'N' AND
+    "Hardware"."FAKE_HDW_IN" = 'N'
+
