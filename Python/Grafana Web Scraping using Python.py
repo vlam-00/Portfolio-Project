@@ -1,3 +1,7 @@
+# Grafana Web Scraping using Python
+# Automating browser inputs to export, rename and save multiple datasets.
+# ----------------------------------------------------------------------------------------------------
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
