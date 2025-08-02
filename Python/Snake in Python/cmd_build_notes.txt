@@ -1,0 +1,75 @@
+Microsoft Windows [Version 10.0.26100.4652]
+(c) Microsoft Corporation. All rights reserved.
+
+C:\Users\4G5597897>cd C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python
+
+C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python>pyinstaller --onefile "Snake in Python 1.0.1.py" --noconsole
+1833 INFO: PyInstaller: 6.14.2, contrib hooks: 2025.8
+1834 INFO: Python: 3.13.5
+1878 INFO: Platform: Windows-11-10.0.26100-SP0
+1878 INFO: Python environment: C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0
+1879 INFO: wrote C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python\Snake in Python 1.0.1.spec
+1899 INFO: Module search paths (PYTHONPATH):
+['C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\Scripts\\pyinstaller.exe',
+ 'C:\\Program '
+ 'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\\python313.zip',
+ 'C:\\Program '
+ 'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\\DLLs',
+ 'C:\\Program '
+ 'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\\Lib',
+ 'C:\\Program '
+ 'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0',
+ 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages',
+ 'C:\\Program '
+ 'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\\Lib\\site-packages',
+ 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\setuptools\\_vendor',
+ 'C:\\Users\\4G5597897\\Documents\\Portfolio Project\\Python\\Snake in Python']
+2383 INFO: checking Analysis
+2415 INFO: Building because C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python\Snake in Python 1.0.1.py changed
+2415 INFO: Running Analysis Analysis-00.toc
+2415 INFO: Target bytecode optimization level: 0
+2415 INFO: Initializing module dependency graph...
+2419 INFO: Initializing module graph hook caches...
+2505 INFO: Analyzing modules for base_library.zip ...
+4034 INFO: Processing standard module hook 'hook-heapq.py' from 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\PyInstaller\\hooks'
+4236 INFO: Processing standard module hook 'hook-encodings.py' from 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\PyInstaller\\hooks'
+8101 INFO: Processing standard module hook 'hook-pickle.py' from 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\PyInstaller\\hooks'
+10796 INFO: Caching module dependency graph...
+10896 INFO: Looking for Python shared library...
+10897 INFO: Using Python shared library: C:\Program Files\WindowsApps\PythonSoftwareFoundation.Python.3.13_3.13.1520.0_x64__qbz5n2kfra8p0\python313.dll
+10897 INFO: Analyzing C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python\Snake in Python 1.0.1.py
+11100 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\PyInstaller\\hooks\\pre_find_module_path'
+11116 INFO: TclTkInfo: initializing cached Tcl/Tk info...
+11771 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\PyInstaller\\hooks'
+11850 INFO: Processing module hooks (post-graph stage)...
+11858 INFO: Processing standard module hook 'hook-_tkinter.py' from 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\PyInstaller\\hooks'
+11882 INFO: Performing binary vs. data reclassification (927 entries)
+12466 INFO: Looking for ctypes DLLs
+12484 INFO: Analyzing run-time hooks ...
+12486 INFO: Including run-time hook 'pyi_rth_inspect.py' from 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\PyInstaller\\hooks\\rthooks'
+12517 INFO: Including run-time hook 'pyi_rth__tkinter.py' from 'C:\\Users\\4G5597897\\AppData\\Local\\Packages\\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\\LocalCache\\local-packages\\Python313\\site-packages\\PyInstaller\\hooks\\rthooks'
+12630 INFO: Creating base_library.zip...
+12682 INFO: Looking for dynamic libraries
+12832 INFO: Extra DLL search directories (AddDllDirectory): []
+12832 INFO: Extra DLL search directories (PATH): []
+13239 INFO: Warnings written to C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python\build\Snake in Python 1.0.1\warn-Snake in Python 1.0.1.txt
+13277 INFO: Graph cross-reference written to C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python\build\Snake in Python 1.0.1\xref-Snake in Python 1.0.1.html
+13534 INFO: checking PYZ
+13604 INFO: checking PKG
+13634 INFO: Building because toc changed
+13634 INFO: Building PKG (CArchive) Snake in Python 1.0.1.pkg
+18162 INFO: Building PKG (CArchive) Snake in Python 1.0.1.pkg completed successfully.
+18187 INFO: Bootloader C:\Users\4G5597897\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.13_qbz5n2kfra8p0\LocalCache\local-packages\Python313\site-packages\PyInstaller\bootloader\Windows-64bit-intel\runw.exe
+18187 INFO: checking EXE
+18241 INFO: Building because console changed
+18241 INFO: Building EXE from EXE-00.toc
+18244 INFO: Copying bootloader EXE to C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python\dist\Snake in Python 1.0.1.exe
+18414 INFO: Copying icon to EXE
+18494 INFO: Copying 0 resources to EXE
+18494 INFO: Embedding manifest in EXE
+18503 INFO: Appending PKG archive to EXE
+18672 INFO: Fixing EXE headers
+22236 INFO: Building EXE from EXE-00.toc completed successfully.
+22261 INFO: Build complete! The results are available in: C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python\dist
+
+C:\Users\4G5597897\Documents\Portfolio Project\Python\Snake in Python>
